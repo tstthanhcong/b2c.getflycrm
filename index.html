@@ -144,6 +144,7 @@ footer a{color:var(--blue);text-decoration:none}
 </head>
 <body>
 
+<!-- ══ HEADER ════════════════════════════════════════════════════ -->
 <header>
   <div class="logo">
     <div class="lm">TST</div>
@@ -157,6 +158,7 @@ footer a{color:var(--blue);text-decoration:none}
   </div>
 </header>
 
+<!-- ══ DASHBOARD ═════════════════════════════════════════════════ -->
 <main>
   <div id="errbox"><strong>⚠ Không thể tải dữ liệu</strong><span id="errmsg"></span></div>
 
@@ -203,7 +205,7 @@ footer a{color:var(--blue);text-decoration:none}
       <span class="pill" id="ibadge" style="background:rgba(59,126,255,.15);color:#7eadff;font-size:11px;font-weight:700">0</span>
     </div>
     <div class="twrap">
-      <table class="dtbl"><thead><tr><th style="width:50px">#</th><th style="width:120px">Nhân viên</th><th style="width:180px">Khách hàng</th><th style="width:120px">Giai đoạn</th><th style="width:110px">Ngày</th><th>Nội dung tương tác</th></tr></thead></table>
+      <table class="dtbl"><thead><tr><th style="width:50px">#</th><th style="width:120px">Nhân viên</th><th style="width:220px">Khách hàng</th><th style="width:120px">Giai đoạn</th><th style="width:110px">Ngày</th><th>Nội dung tương tác</th></tr></thead></table>
       <div class="sb"><table class="dtbl"><tbody id="itbody"></tbody></table></div>
     </div>
   </div>
@@ -263,16 +265,31 @@ let charts={}, cdsec=300, cdT, rfT, GAS_URL='';
   startAuto();
 })();
 
-// Hàm tìm dữ liệu cột thông minh: Tự động loại bỏ dấu, ký tự ẩn và xử lý text/số
-function col(row, candidates) {
+// Hàm quét dữ liệu cột SIÊU CẤP: Né các cột rác (Mã/ID) và tự động bỏ qua ô rỗng để tìm ô có dữ liệu thực tế
+function col(row, candidates, avoidMatches = []) {
   if (!row) return '';
+  let fallbackValue = '';
+  
+  // Vòng 1: Tìm kiếm cột khớp từ khóa, KHÔNG chứa từ khóa tránh, và ô PHẢI CÓ DỮ LIỆU
   for (const k of Object.keys(row)) {
     const cleanKey = k.toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
     if (candidates.some(c => cleanKey.includes(c))) {
-      return row[k] !== null && row[k] !== undefined ? row[k].toString().trim() : '';
+      if (avoidMatches.some(a => cleanKey.includes(a))) continue; 
+      const val = row[k] !== null && row[k] !== undefined ? row[k].toString().trim() : '';
+      if (val !== '') return val; // Tìm thấy cột chuẩn có chữ là bốc luôn
+      if (!fallbackValue) fallbackValue = val;
     }
   }
-  return '';
+  
+  // Vòng 2: Hạ cấp bộ lọc, chấp nhận lấy cột bất kỳ khớp từ khóa nếu vòng 1 trống trơn
+  for (const k of Object.keys(row)) {
+    const cleanKey = k.toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+    if (candidates.some(c => cleanKey.includes(c))) {
+      const val = row[k] !== null && row[k] !== undefined ? row[k].toString().trim() : '';
+      if (val !== '') return val;
+    }
+  }
+  return fallbackValue;
 }
 
 function showSetup(){}
@@ -416,19 +433,24 @@ function render(nR, iR, rvR, qR){
   const ib=document.getElementById('itbody'); ib.innerHTML='';
   [...iR].reverse().forEach((r,i)=>{
     const p=sn(col(r, ['người thực hiện', 'nhan vien', 'staff']));
-    const kh=col(r, ['khách hàng', 'customer', 'tên kh']);
+    
+    // Đã sửa: Tìm cột chứa TÊN bằng cách né các cột chứa chữ "mã" / "id" / "code"
+    const kh=col(r, ['tên khách hàng', 'tên công ty', 'khách hàng', 'customer', 'tên kh'], ['mã', 'id', 'code']);
+    
     const stg=col(r, ['mối quan hệ', 'quan he', 'stage']);
     const t=col(r, ['thời gian thực hiện', 'thời gian', 'ngày', 'date']).split(' ')[0];
-    const cnt=col(r, ['nội dung', 'trao đổi', 'ghi chú']);
+    
+    // Đã sửa: Tìm diện rộng các từ khóa mô tả nội dung hoạt động thực tế từ Getfly
+    const cnt=col(r, ['nội dung tương tác', 'nội dung trao đổi', 'nội dung', 'trao đổi', 'ghi chú', 'mô tả', 'chi tiết hoạt động']);
     const colClr=STAGE_CLR[stg]||'#8898b8';
     
     ib.innerHTML+=`<tr>
       <td style="color:var(--muted);font-size:11px;width:50px">${iR.length-i}</td>
       <td style="font-weight:600;white-space:nowrap;width:120px">${p}</td>
-      <td style="font-size:12px;max-width:180px;width:180px;word-break:break-all">${kh}</td>
+      <td style="font-size:12px;max-width:180px;width:180px;word-break:break-all;color:var(--cyan);font-weight:500">${kh || 'Chưa rõ tên'}</td>
       <td style="width:120px"><span class="pill" style="background:${colClr}22;color:${colClr};border:1px solid ${colClr}44">${stg||'—'}</span></td>
       <td style="color:var(--muted);font-size:11px;white-space:nowrap;width:110px">${t||'—'}</td>
-      <td style="color:var(--m2);font-size:12px;max-width:240px;word-break:break-all">${cnt.slice(0,90)}${cnt.length>=90?'…':''}</td>
+      <td style="color:var(--m2);font-size:12px;max-width:240px;word-break:break-all">${cnt ? cnt.slice(0,90) + (cnt.length>=90?'…':'') : '—'}</td>
     </tr>`;
   });
   set('ibadge', iR.length+' bản ghi');
@@ -437,14 +459,17 @@ function render(nR, iR, rvR, qR){
   const qb=document.getElementById('qtbody'); qb.innerHTML='';
   [...qR].reverse().forEach((r,i)=>{
     const p=sn(col(r, ['người báo giá', 'người tạo', 'nhân viên', 'staff', 'sale', 'người thực hiện']));
-    const kh=col(r, ['khách hàng', 'tên kh', 'customer']);
+    
+    // Đã sửa: Né cột ID của tab Báo giá để bốc cột Tên chi tiết khách hàng
+    const kh=col(r, ['tên khách hàng', 'tên công ty', 'khách hàng', 'customer', 'tên kh'], ['mã', 'id', 'code']);
+    
     const val=parseFloat((col(r, ['giá trị báo giá', 'giá trị', 'giatri', 'tổng tiền', 'tong tien', 'value', 'amount']) || '0').replace(/[^0-9.]/g,'')) || 0;
-    const cnt=col(r, ['sản phẩm', 'ghi chú', 'nội dung', 'tên xe', 'mô tả']);
+    const cnt=col(r, ['sản phẩm', 'ghi chú', 'nội dung', 'tên xe', 'mô tả', 'chi tiết']);
     
     qb.innerHTML+=`<tr>
       <td style="color:var(--muted);font-size:11px;width:50px">${qR.length-i}</td>
       <td style="font-weight:600;white-space:nowrap;width:150px">${p || 'Ẩn danh'}</td>
-      <td style="font-size:12px;max-width:180px;width:220px;word-break:break-all">${kh || '—'}</td>
+      <td style="font-size:12px;max-width:180px;width:220px;word-break:break-all;color:var(--cyan);font-weight:500">${kh || 'Chưa rõ tên'}</td>
       <td style="width:150px;color:var(--amber);font-weight:600">${val > 0 ? val.toLocaleString('vi-VN') + ' đ' : '—'}</td>
       <td style="color:var(--m2);font-size:12px;word-break:break-all">${cnt || '—'}</td>
     </tr>`;
@@ -454,7 +479,7 @@ function render(nR, iR, rvR, qR){
   // New customers table
   const nb=document.getElementById('ntbody'); nb.innerHTML='';
   nR.forEach((r,i)=>{
-    const kh=col(r, ['khách hàng', 'tên khách hàng', 'customer']);
+    const kh=col(r, ['tên khách hàng', 'khách hàng', 'customer'], ['mã', 'id', 'code']);
     const src=(col(r, ['nguồn khách hàng', 'nguồn', 'source', 'kênh']) || 'Khác').replace(/^S\d+[_ ]*/,'').trim()||'Khác';
     nb.innerHTML+=`<tr>
       <td style="color:var(--muted);font-size:11px;width:50px">${i+1}</td>
@@ -470,7 +495,6 @@ function mkChart(id,type,data,opts){
   destroyChart(id);
   charts[id]=new Chart(document.getElementById(id),{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});
 }
-// Đã sửa cú pháp đóng biểu đồ chuẩn JavaScript
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 // ── AUTO REFRESH + COUNTDOWN ──────────────────────────────
