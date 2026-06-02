@@ -3,10 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TST � CRM Dashboard</title>
-<!-- Gi? th? vi?n c? n?u mu?n upload th? c�ng d? ph�ng, b? sung PapaParse ?? ??c Google Sheets -->
+<title>TST · CRM Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap');
@@ -36,7 +34,7 @@
     min-height: 100vh;
   }
 
-  /* ?? TOP BAR ?? */
+  /* ── TOP BAR ── */
   header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -75,6 +73,12 @@
     color: var(--text);
   }
 
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
   #week-label {
     font-size: 12px;
     color: var(--muted);
@@ -84,32 +88,127 @@
     border: 1px solid var(--border);
   }
 
-  /* ?? LOADING SCREEN ?? */
-  #loading-section {
+  /* ── UPLOAD ZONE ── */
+  #upload-section {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: calc(100vh - 58px);
     padding: 40px;
-    gap: 16px;
+    gap: 24px;
   }
 
-  .loader {
-    border: 4px solid var(--surface2);
-    border-top: 4px solid var(--accent);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
+  .upload-card {
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    padding: 60px 80px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    max-width: 520px;
+    width: 100%;
   }
 
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  .upload-card:hover, .upload-card.drag-over {
+    border-color: var(--accent);
+    background: rgba(37,99,235,0.05);
+    transform: translateY(-2px);
   }
 
-  /* ?? DASHBOARD ?? */
+  .upload-icon {
+    font-size: 52px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .upload-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .upload-card p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .upload-btn {
+    margin-top: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .upload-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+  }
+
+  .format-hint {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 24px;
+    max-width: 520px;
+    width: 100%;
+  }
+
+  .format-hint h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+
+  .format-hint ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .format-hint li {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .format-hint li::before {
+    content: '›';
+    color: var(--accent2);
+    font-size: 14px;
+  }
+
+  .sheet-tag {
+    background: rgba(37,99,235,0.15);
+    color: var(--accent2);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+
+  #file-input { display: none; }
+
+  /* ── DASHBOARD ── */
   #dashboard { display: none; padding: 24px 28px 40px; }
 
   /* KPI Strip */
@@ -168,7 +267,10 @@
   .kpi.orange .kpi-value { color: var(--orange); }
   .kpi.purple .kpi-value { color: #a78bfa; }
 
-  .kpi-sub { font-size: 11px; color: var(--muted); }
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
 
   /* Charts Grid */
   .charts-grid {
@@ -204,8 +306,17 @@
     color: var(--text);
   }
 
-  .chart-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .chart-canvas-wrap { position: relative; height: 220px; }
+  .chart-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .chart-canvas-wrap {
+    position: relative;
+    height: 220px;
+  }
+
   .chart-canvas-wrap.tall { height: 260px; }
 
   /* Table */
@@ -233,8 +344,18 @@
     letter-spacing: 0.3px;
   }
 
-  .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
 
   thead th {
     background: var(--surface2);
@@ -251,7 +372,12 @@
   tbody tr { border-bottom: 1px solid rgba(42,52,65,0.5); transition: background 0.15s; }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: rgba(255,255,255,0.025); }
-  td { padding: 10px 16px; color: var(--text); vertical-align: middle; }
+
+  td {
+    padding: 10px 16px;
+    color: var(--text);
+    vertical-align: middle;
+  }
 
   .stage-pill {
     display: inline-block;
@@ -300,11 +426,36 @@
   }
 
   /* Funnel */
-  .funnel-wrap { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
-  .funnel-row { display: flex; align-items: center; gap: 10px; }
-  .funnel-label { font-size: 12px; color: var(--muted); width: 90px; flex-shrink: 0; text-align: right; }
-  .funnel-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 28px; overflow: hidden; position: relative; }
-  
+  .funnel-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 0;
+  }
+
+  .funnel-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .funnel-label {
+    font-size: 12px;
+    color: var(--muted);
+    width: 90px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .funnel-bar-wrap {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 28px;
+    overflow: hidden;
+    position: relative;
+  }
+
   .funnel-bar {
     height: 100%;
     border-radius: 4px;
@@ -318,7 +469,14 @@
     min-width: 32px;
   }
 
-  .funnel-count { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; width: 30px; text-align: right; flex-shrink: 0; }
+  .funnel-count {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    width: 30px;
+    text-align: right;
+    flex-shrink: 0;
+  }
 
   /* Scrollable table */
   .table-scroll { overflow-x: auto; max-height: 320px; overflow-y: auto; }
@@ -342,10 +500,20 @@
     animation: slideUp 0.3s ease;
   }
 
-  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
 
-  .kpi, .chart-card, .table-card, .update-bar { animation: fadeIn 0.4s ease backwards; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .kpi, .chart-card, .table-card, .update-bar {
+    animation: fadeIn 0.4s ease backwards;
+  }
+
   .kpi:nth-child(1) { animation-delay: 0.05s; }
   .kpi:nth-child(2) { animation-delay: 0.10s; }
   .kpi:nth-child(3) { animation-delay: 0.15s; }
@@ -366,56 +534,72 @@
   <div class="logo">
     <span class="logo-badge">TST</span>
     <div>
-      <div class="logo-title">CRM Dashboard <span style="color:var(--muted);font-weight:400">� Doosan Bobcat</span></div>
+      <div class="logo-title">CRM Dashboard <span style="color:var(--muted);font-weight:400">· Doosan Bobcat</span></div>
     </div>
   </div>
-  <span id="week-label">?ang t?i d? li?u...</span>
+  <span id="week-label">Chưa có dữ liệu</span>
 </header>
 
-<!-- LOADING SCREEN -->
-<div id="loading-section">
-  <div class="loader"></div>
-  <p style="color: var(--muted); font-size: 14px;">?ang ??ng b? d? li?u CRM t? Google Sheets...</p>
+<!-- UPLOAD SCREEN -->
+<div id="upload-section">
+  <div class="upload-card" id="drop-zone">
+    <span class="upload-icon">📊</span>
+    <h2>Upload file CRM từ Getfly</h2>
+    <p>Kéo thả file Excel (.xlsx) xuất từ hệ thống Getfly<br>vào đây hoặc nhấn nút bên dưới để chọn file.</p>
+    <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+      ↑ &nbsp;Chọn file Excel
+    </button>
+    <input type="file" id="file-input" accept=".xlsx,.xls">
+  </div>
+
+  <div class="format-hint">
+    <h4>📋 File cần có các sheet sau</h4>
+    <ul>
+      <li><span class="sheet-tag">Khách hàng mới</span> — Cột: Khách hàng, Nguồn khách hàng</li>
+      <li><span class="sheet-tag">Tương tác</span> — Cột: Người thực hiện, Mối quan hệ, Thời gian thực hiện</li>
+      <li><span class="sheet-tag">Đơn hàng</span> / <span class="sheet-tag">Doanh thu</span> — Cột: Giá trị (nếu có)</li>
+    </ul>
+  </div>
 </div>
 
 <!-- DASHBOARD -->
 <div id="dashboard">
   <div class="update-bar">
     <div class="update-info">
-      ?? Ngu?n: <strong id="file-name-display">Google Sheets Live</strong>
-      &nbsp;�&nbsp; C?p nh?t l�c: <strong id="last-updated">�</strong>
-      &nbsp;�&nbsp; <span id="data-period">�</span>
+      📁 File: <strong id="file-name-display">—</strong>
+      &nbsp;·&nbsp; Cập nhật lúc: <strong id="last-updated">—</strong>
+      &nbsp;·&nbsp; <span id="data-period">—</span>
     </div>
-    <button class="update-btn" onclick="fetchAllSheetsData()">
-      ? &nbsp;L�m m?i d? li?u
+    <button class="update-btn" onclick="document.getElementById('file-input').click()">
+      ↺ &nbsp;Upload file mới
     </button>
   </div>
 
   <div class="kpi-strip">
     <div class="kpi blue">
-      <div class="kpi-label">Kh�ch h�ng m?i</div>
-      <div class="kpi-value" id="k-new">�</div>
-      <div class="kpi-sub">tu?n n�y</div>
+      <div class="kpi-label">Khách hàng mới</div>
+      <div class="kpi-value" id="k-new">—</div>
+      <div class="kpi-sub">tuần này</div>
     </div>
     <div class="kpi cyan">
-      <div class="kpi-label">T?ng t??ng t�c</div>
-      <div class="kpi-value" id="k-inter">�</div>
-      <div class="kpi-sub">l??t b�nh lu?n / li�n h?</div>
+      <div class="kpi-label">Tổng tương tác</div>
+      <div class="kpi-value" id="k-inter">—</div>
+      <div class="kpi-sub">lượt bình luận / liên hệ</div>
     </div>
     <div class="kpi green">
-      <div class="kpi-label">?� ch?t ??n</div>
-      <div class="kpi-value" id="k-close">�</div>
-      <div class="kpi-sub">kh�ch h�ng</div>
+      <div class="kpi-label">Đã chốt đơn</div>
+      <div class="kpi-value" id="k-close">—</div>
+      <div class="kpi-sub">khách hàng</div>
     </div>
     <div class="kpi orange">
-      <div class="kpi-label">T? l? chuy?n ??i</div>
-      <div class="kpi-value" id="k-rate">�</div>
-      <div class="kpi-sub">Ch?t / T?ng KH</div>
+      <div class="kpi-label">Tỷ lệ chuyển đổi</div>
+      <div class="kpi-value" id="k-rate">—</div>
+      <div class="kpi-sub">Chốt / Tổng KH</div>
     </div>
     <div class="kpi purple">
-      <div class="kpi-label">Nh�n vi�n sale</div>
-      <div class="kpi-value" id="k-staff">�</div>
-      <div class="kpi-sub">ng??i ho?t ??ng</div>
+      <div class="kpi-label">Nhân viên sale</div>
+      <div class="kpi-value" id="k-staff">—</div>
+      <div class="kpi-sub">người hoạt động</div>
     </div>
   </div>
 
@@ -424,8 +608,8 @@
     <div class="chart-card">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Ngu?n kh�ch h�ng m?i</div>
-          <div class="chart-sub">Ph�n b? theo k�nh marketing</div>
+          <div class="chart-title">Nguồn khách hàng mới</div>
+          <div class="chart-sub">Phân bổ theo kênh marketing</div>
         </div>
       </div>
       <div class="chart-canvas-wrap"><canvas id="c-source"></canvas></div>
@@ -435,8 +619,8 @@
     <div class="chart-card">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Ph?u chuy?n ??i</div>
-          <div class="chart-sub">M?i quan h? theo giai ?o?n</div>
+          <div class="chart-title">Phễu chuyển đổi</div>
+          <div class="chart-sub">Mối quan hệ theo giai đoạn</div>
         </div>
       </div>
       <div id="funnel-wrap" class="funnel-wrap" style="margin-top:8px"></div>
@@ -446,8 +630,8 @@
     <div class="chart-card">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Ho?t ??ng theo sale</div>
-          <div class="chart-sub">S? t??ng t�c m?i nh�n vi�n</div>
+          <div class="chart-title">Hoạt động theo sale</div>
+          <div class="chart-sub">Số tương tác mỗi nhân viên</div>
         </div>
       </div>
       <div class="chart-canvas-wrap"><canvas id="c-staff"></canvas></div>
@@ -457,19 +641,19 @@
     <div class="chart-card">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Ph�n b? M?i quan h?</div>
-          <div class="chart-sub">T? l? % c�c giai ?o?n</div>
+          <div class="chart-title">Phân bổ Mối quan hệ</div>
+          <div class="chart-sub">Tỷ lệ % các giai đoạn</div>
         </div>
       </div>
       <div class="chart-canvas-wrap"><canvas id="c-stage"></canvas></div>
     </div>
 
-    <!-- Bar: Revenue -->
+    <!-- Bar: Revenue (if available) -->
     <div class="chart-card wide">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Doanh thu / ??n h�ng</div>
-          <div class="chart-sub" id="rev-sub">Gi� tr? ??n h�ng theo nh�n vi�n (n?u c� d? li?u)</div>
+          <div class="chart-title">Doanh thu / Đơn hàng</div>
+          <div class="chart-sub" id="rev-sub">Giá trị đơn hàng theo nhân viên (nếu có dữ liệu)</div>
         </div>
       </div>
       <div class="chart-canvas-wrap tall"><canvas id="c-revenue"></canvas></div>
@@ -479,19 +663,19 @@
   <!-- Interactions table -->
   <div class="table-card">
     <div class="table-header">
-      <div class="table-title">?? Chi ti?t t??ng t�c</div>
-      <span class="badge" id="inter-count-badge" style="background:rgba(37,99,235,0.15);color:var(--accent2)">0 b?n ghi</span>
+      <div class="table-title">📋 Chi tiết tương tác</div>
+      <span class="badge" id="inter-count-badge" style="background:rgba(37,99,235,0.15);color:var(--accent2)">0 bản ghi</span>
     </div>
     <div class="table-scroll">
       <table>
         <thead>
           <tr>
             <th>#</th>
-            <th>Nh�n vi�n</th>
-            <th>Kh�ch h�ng</th>
-            <th>Giai ?o?n</th>
-            <th>Th?i gian</th>
-            <th>N?i dung t�m t?t</th>
+            <th>Nhân viên</th>
+            <th>Khách hàng</th>
+            <th>Giai đoạn</th>
+            <th>Thời gian</th>
+            <th>Nội dung tóm tắt</th>
           </tr>
         </thead>
         <tbody id="inter-tbody"></tbody>
@@ -502,16 +686,16 @@
   <!-- New customers table -->
   <div class="table-card" style="margin-top:16px">
     <div class="table-header">
-      <div class="table-title">?? Kh�ch h�ng m?i</div>
-      <span class="badge" id="new-count-badge" style="background:rgba(16,185,129,0.15);color:var(--green)">0 kh�ch</span>
+      <div class="table-title">🆕 Khách hàng mới</div>
+      <span class="badge" id="new-count-badge" style="background:rgba(16,185,129,0.15);color:var(--green)">0 khách</span>
     </div>
     <div class="table-scroll">
       <table>
         <thead>
           <tr>
             <th>#</th>
-            <th>T�n kh�ch h�ng</th>
-            <th>Ngu?n</th>
+            <th>Tên khách hàng</th>
+            <th>Nguồn</th>
           </tr>
         </thead>
         <tbody id="new-tbody"></tbody>
@@ -523,57 +707,80 @@
 <div id="error-toast"></div>
 
 <script>
-// ==========================================
-// THAY LINK TH�NH C�C LINK CSV T? GOOGLE SHEETS C?A B?N
-// ==========================================
-const SHEET_URLS = {
-  newCust: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQj1Wxc9DzdC__9ffuMS9Uhi_vCU9U2aSQvrh9ii9ffG9rTBX0LBGgeVh_afMhM7w/pub?gid=1039389119&single=true&output=csv',
-  inter:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQj1Wxc9DzdC__9ffuMS9Uhi_vCU9U2aSQvrh9ii9ffG9rTBX0LBGgeVh_afMhM7w/pub?gid=1021782305&single=true&output=csv',
-  orders:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQj1Wxc9DzdC__9ffuMS9Uhi_vCU9U2aSQvrh9ii9ffG9rTBX0LBGgeVh_afMhM7w/pub?gid=1477090896&single=true&output=csv',
-  revenue: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQj1Wxc9DzdC__9ffuMS9Uhi_vCU9U2aSQvrh9ii9ffG9rTBX0LBGgeVh_afMhM7w/pub?gid=717963464&single=true&output=csv'
-};
-
+// ── Chart instances ──
 let charts = {};
-const STAGE_ORDER  = ['M?i','Ti?p c?n','C� Nhu C?u','Ti?m n?ng','Ch?t'];
-const STAGE_COLORS = { 'M?i': '#60a5fa', 'Ti?p c?n': '#facc15', 'C� Nhu C?u': '#34d399', 'Ti?m n?ng': '#fb923c', 'Ch?t': '#a78bfa' };
+
+const STAGE_ORDER  = ['Mới','Tiếp cận','Có Nhu Cầu','Tiềm năng','Chốt'];
+const STAGE_COLORS = {
+  'Mới':        '#60a5fa',
+  'Tiếp cận':   '#facc15',
+  'Có Nhu Cầu': '#34d399',
+  'Tiềm năng':  '#fb923c',
+  'Chốt':       '#a78bfa',
+};
 const SRC_COLORS = ['#3b82f6','#06b6d4','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899'];
 const STAFF_COLORS = ['#3b82f6','#06b6d4','#8b5cf6','#10b981','#f59e0b'];
 
-// H�m t? ??ng load khi m? trang web
-window.onload = function() {
-  fetchAllSheetsData();
-};
+// ── File input ──
+const fileInput = document.getElementById('file-input');
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+});
 
-// H�m fetch ??ng th?i c? 4 ngu?n d? li?u t? Google Sheets
-function fetchAllSheetsData() {
-  document.getElementById('loading-section').style.display = 'flex';
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('week-label').textContent = '?ang t?i d? li?u...';
+// ── Drag & Drop ──
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+});
 
-  const promises = Object.keys(SHEET_URLS).map(key => {
-    return new Promise((resolve, reject) => {
-      Papa.parse(SHEET_URLS[key], {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: results => resolve({ key, data: results.data }),
-        error: err => reject(`L?i t?i tab ${key}: ${err.message}`)
-      });
-    });
-  });
-
-  Promise.all(promises)
-    .then(results => {
-      const formattedData = {};
-      results.forEach(res => { formattedData[res.key] = res.data; });
-      renderDashboard(formattedData, "Google Sheets Cloud");
-    })
-    .catch(err => {
-      document.getElementById('loading-section').style.display = 'none';
-      showError(err);
-    });
+// ── Process ──
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const data = parseSheets(wb);
+      renderDashboard(data, file.name);
+    } catch(err) {
+      showError('Không đọc được file: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
 
+function parseSheets(wb) {
+  const find = (keywords) => {
+    for (const name of wb.SheetNames) {
+      const n = name.toLowerCase().trim();
+      if (keywords.some(k => n.includes(k))) return wb.Sheets[name];
+    }
+    return null;
+  };
+
+  const toRows = (ws) => {
+    if (!ws) return [];
+    return XLSX.utils.sheet_to_json(ws, { defval: '' });
+  };
+
+  // Find sheets
+  const wsNew    = find(['khách hàng mới','khach hang moi','new']);
+  const wsInter  = find(['tương tác','tuong tac','interaction']);
+  const wsOrder  = find(['đơn hàng','don hang','order']);
+  const wsRevenue= find(['doanh thu','revenue']);
+
+  const newCust  = toRows(wsNew);
+  const inter    = toRows(wsInter);
+  const orders   = toRows(wsOrder);
+  const revenue  = toRows(wsRevenue);
+
+  return { newCust, inter, orders, revenue };
+}
+
+// ── Column finder ──
 function col(row, candidates) {
   for (const k of Object.keys(row)) {
     const kl = k.toLowerCase().trim();
@@ -582,43 +789,50 @@ function col(row, candidates) {
   return '';
 }
 
+// ── Render ──
 function renderDashboard(data, fileName) {
   const { newCust, inter, orders, revenue } = data;
 
-  // KPI logic
-  const stages = inter.map(r => (col(r,['m?i quan h?','quan he','stage','relationship']) || '').toString().trim());
-  const closedCount = stages.filter(s => s === 'Ch?t').length;
-  const uniqueKH    = new Set(inter.map(r => col(r,['m� kh�ch','kh�ch h�ng','customer','kh']) )).size;
-  const staff       = inter.map(r => (col(r,['ng??i th?c hi?n','nhan vien','staff','ng??i']) || '').toString().trim());
+  // KPI
+  const stages = inter.map(r => (col(r,['mối quan hệ','quan he','stage','relationship']) || '').toString().trim());
+  const closedCount = stages.filter(s => s === 'Chốt').length;
+  const uniqueKH    = new Set(inter.map(r => col(r,['mã khách','khách hàng','customer','kh']) )).size;
+  const staff       = inter.map(r => (col(r,['người thực hiện','nhan vien','staff','người']) || '').toString().trim());
   const uniqueStaff = new Set(staff.filter(Boolean)).size;
 
   document.getElementById('k-new').textContent   = newCust.length;
   document.getElementById('k-inter').textContent = inter.length;
   document.getElementById('k-close').textContent = closedCount;
-  document.getElementById('k-rate').textContent  = newCust.length ? Math.round(closedCount / newCust.length * 100) + '%' : '�';
+  document.getElementById('k-rate').textContent  = newCust.length
+    ? Math.round(closedCount / newCust.length * 100) + '%'
+    : '—';
   document.getElementById('k-staff').textContent = uniqueStaff;
 
+  // Week label
   const times = inter
-    .map(r => col(r,['th?i gian','time','ng�y','date']))
+    .map(r => col(r,['thời gian','time','ngày','date']))
     .map(v => parseDate(v))
     .filter(Boolean)
     .sort((a,b) => a-b);
 
   if (times.length) {
     const fmt = d => d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'});
-    document.getElementById('week-label').textContent = `D? li?u: ${fmt(times[0])} � ${fmt(times[times.length-1])}`;
-    document.getElementById('data-period').innerHTML = `Kho?ng th?i gian: <strong>${fmt(times[0])} � ${fmt(times[times.length-1])}</strong>`;
+    document.getElementById('week-label').textContent =
+      `Dữ liệu: ${fmt(times[0])} – ${fmt(times[times.length-1])}`;
+    document.getElementById('data-period').innerHTML =
+      `Khoảng thời gian: <strong>${fmt(times[0])} – ${fmt(times[times.length-1])}</strong>`;
   }
 
   document.getElementById('file-name-display').textContent = fileName;
-  document.getElementById('last-updated').textContent = new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('last-updated').textContent =
+    new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
-  // ?? Source chart ??
+  // ── Source chart ──
   const srcMap = {};
   newCust.forEach(r => {
-    let s = (col(r,['ngu?n','source','kenh']) || 'Kh�c').toString().trim();
+    let s = (col(r,['nguồn','source','kenh']) || 'Khác').toString().trim();
     s = s.replace(/^S\d+_\s*/,'');
-    if(s) srcMap[s] = (srcMap[s]||0)+1;
+    srcMap[s] = (srcMap[s]||0)+1;
   });
   const srcLabels = Object.keys(srcMap);
   const srcVals   = srcLabels.map(k => srcMap[k]);
@@ -628,7 +842,13 @@ function renderDashboard(data, fileName) {
     type: 'doughnut',
     data: {
       labels: srcLabels,
-      datasets: [{ data: srcVals, backgroundColor: SRC_COLORS.slice(0, srcLabels.length), borderColor: '#161b22', borderWidth: 3, hoverOffset: 8 }]
+      datasets: [{
+        data: srcVals,
+        backgroundColor: SRC_COLORS.slice(0, srcLabels.length),
+        borderColor: '#161b22',
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -640,7 +860,7 @@ function renderDashboard(data, fileName) {
     }
   });
 
-  // ?? Funnel ??
+  // ── Funnel ──
   const stageMap = {};
   stages.forEach(s => { if(s) stageMap[s] = (stageMap[s]||0)+1; });
   const maxStage = Math.max(...Object.values(stageMap), 1);
@@ -660,23 +880,29 @@ function renderDashboard(data, fileName) {
       </div>`;
   });
 
-  // ?? Staff bar ??
+  // ── Staff bar ──
   const staffMap = {};
   staff.forEach(s => { if(s) staffMap[s] = (staffMap[s]||0)+1; });
   const staffLabels = Object.keys(staffMap).sort((a,b) => staffMap[b]-staffMap[a]);
   const staffVals   = staffLabels.map(k => staffMap[k]);
-  const shortName = n => n ? n.split(' ').slice(-2).join(' ') : '?n danh';
+  const shortName = n => n.split(' ').slice(-2).join(' ');
 
   destroyChart('c-staff');
   charts['c-staff'] = new Chart(document.getElementById('c-staff'), {
     type: 'bar',
     data: {
       labels: staffLabels.map(shortName),
-      datasets: [{ label: 'T??ng t�c', data: staffVals, backgroundColor: STAFF_COLORS.slice(0, staffLabels.length), borderRadius: 6, borderSkipped: false }]
+      datasets: [{
+        label: 'Tương tác',
+        data: staffVals,
+        backgroundColor: STAFF_COLORS.slice(0, staffLabels.length),
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ` ${ctx.raw} t??ng t�c` }}},
+      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ` ${ctx.raw} tương tác` }}},
       scales: {
         x: { ticks:{ color:'#8b949e', font:{size:11} }, grid:{ display:false } },
         y: { ticks:{ color:'#8b949e', font:{size:11} }, grid:{ color:'rgba(255,255,255,0.04)' }, beginAtZero:true }
@@ -684,7 +910,7 @@ function renderDashboard(data, fileName) {
     }
   });
 
-  // ?? Stage doughnut ??
+  // ── Stage doughnut ──
   const stageLabels = STAGE_ORDER.filter(s => stageMap[s]);
   const stageVals   = stageLabels.map(s => stageMap[s]);
   const stageColors = stageLabels.map(s => STAGE_COLORS[s] || '#60a5fa');
@@ -694,7 +920,13 @@ function renderDashboard(data, fileName) {
     type: 'doughnut',
     data: {
       labels: stageLabels,
-      datasets: [{ data: stageVals, backgroundColor: stageColors, borderColor: '#161b22', borderWidth: 3, hoverOffset: 8 }]
+      datasets: [{
+        data: stageVals,
+        backgroundColor: stageColors,
+        borderColor: '#161b22',
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -706,88 +938,98 @@ function renderDashboard(data, fileName) {
     }
   });
 
-  // ?? Revenue chart ??
+  // ── Revenue chart ──
   const allOrders = [...orders, ...revenue];
   const revMap = {};
   allOrders.forEach(r => {
-    const person = (col(r,['ng??i th?c hi?n','nhan vien','staff']) || '').toString().trim();
-    const val    = parseFloat((col(r,['gi� tr?','gia tri','value','revenue','amount']) || '0').toString().replace(/[^0-9.]/g,'')) || 0;
+    const person = (col(r,['người thực hiện','nhan vien','staff']) || '').toString().trim();
+    const val    = parseFloat((col(r,['giá trị','gia tri','value','revenue','amount']) || '0').toString().replace(/[^0-9.]/g,'')) || 0;
     if (person && val > 0) revMap[person] = (revMap[person]||0) + val;
   });
 
   destroyChart('c-revenue');
   const revLabels = Object.keys(revMap).sort((a,b) => revMap[b]-revMap[a]);
   if (revLabels.length) {
-    document.getElementById('rev-sub').textContent = 'T?ng gi� tr? ??n h�ng theo nh�n vi�n (VN?)';
+    document.getElementById('rev-sub').textContent = 'Tổng giá trị đơn hàng theo nhân viên (VNĐ)';
     charts['c-revenue'] = new Chart(document.getElementById('c-revenue'), {
       type: 'bar',
       data: {
         labels: revLabels.map(shortName),
-        datasets: [{ label: 'Doanh thu (VN?)', data: revLabels.map(k => revMap[k]), backgroundColor: 'rgba(37,99,235,0.7)', borderColor: '#2563eb', borderWidth: 1, borderRadius: 6 }]
+        datasets: [{
+          label: 'Doanh thu (VNĐ)',
+          data: revLabels.map(k => revMap[k]),
+          backgroundColor: 'rgba(37,99,235,0.7)',
+          borderColor: '#2563eb',
+          borderWidth: 1,
+          borderRadius: 6,
+        }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + ' ?' }}},
+        plugins: {
+          legend:{ display:false },
+          tooltip:{ callbacks:{ label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + ' đ' }}
+        },
         scales: {
           x:{ ticks:{ color:'#8b949e', font:{size:11} }, grid:{ display:false } },
-          y:{ ticks:{ color:'#8b949e', font:{size:11}, callback: v => (v/1e6).toFixed(0)+'M' }, grid:{ color:'rgba(255,255,255,0.04)' }, beginAtZero:true }
+          y:{ ticks:{ color:'#8b949e', font:{size:11}, callback: v => (v/1e6).toFixed(0)+'M' },
+              grid:{ color:'rgba(255,255,255,0.04)' }, beginAtZero:true }
         }
       }
     });
   } else {
-    document.getElementById('rev-sub').textContent = 'Ch?a c� d? li?u ??n h�ng trong file n�y';
+    document.getElementById('rev-sub').textContent = 'Chưa có dữ liệu đơn hàng trong file này';
     const ctx = document.getElementById('c-revenue').getContext('2d');
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.font = '13px Be Vietnam Pro';
     ctx.fillStyle = '#4b5563';
     ctx.textAlign = 'center';
-    ctx.fillText('Kh�ng c� d? li?u doanh thu', ctx.canvas.width/2, 100);
+    ctx.fillText('Không có dữ liệu doanh thu', ctx.canvas.width/2, 100);
   }
 
-  // ?? Interaction table ??
+  // ── Interaction table ──
   const tbody = document.getElementById('inter-tbody');
   tbody.innerHTML = '';
   inter.slice().reverse().forEach((r, i) => {
-    const person  = (col(r,['ng??i th?c hi?n','nhan vien']) || '').toString().trim();
-    const kh      = (col(r,['kh�ch h�ng','customer','ten kh']) || '').toString().trim();
-    const stage   = (col(r,['m?i quan h?','quan he','stage']) || '').toString().trim();
-    const time    = (col(r,['th?i gian','time','ngay']) || '').toString().trim();
-    const content = (col(r,['n?i dung','content','ghi chu']) || '').toString().trim();
+    const person  = (col(r,['người thực hiện','nhan vien']) || '').toString().trim();
+    const kh      = (col(r,['khách hàng','customer','ten kh']) || '').toString().trim();
+    const stage   = (col(r,['mối quan hệ','quan he','stage']) || '').toString().trim();
+    const time    = (col(r,['thời gian','time','ngay']) || '').toString().trim();
+    const content = (col(r,['nội dung','content','ghi chu']) || '').toString().trim();
+
     const color = STAGE_COLORS[stage] || '#60a5fa';
-    const shortContent = content.length > 80 ? content.slice(0,80) + '�' : content;
+    const shortContent = content.length > 80 ? content.slice(0,80) + '…' : content;
 
     tbody.innerHTML += `
       <tr>
         <td style="color:var(--muted);font-size:11px">${inter.length - i}</td>
         <td><span style="font-weight:600">${shortName(person)}</span></td>
         <td style="max-width:220px;font-size:12px">${kh}</td>
-        <td><span class="stage-pill" style="background:${color}22;color:${color};border:1px solid ${color}44">${stage||'�'}</span></td>
-        <td style="color:var(--muted);font-size:11px;white-space:nowrap">${time.split(' ')[0] || '�'}</td>
+        <td><span class="stage-pill" style="background:${color}22;color:${color};border:1px solid ${color}44">${stage||'—'}</span></td>
+        <td style="color:var(--muted);font-size:11px;white-space:nowrap">${time.split(' ')[0] || '—'}</td>
         <td style="color:var(--muted);font-size:12px;max-width:260px">${shortContent}</td>
       </tr>`;
   });
-  document.getElementById('inter-count-badge').textContent = inter.length + ' b?n ghi';
+  document.getElementById('inter-count-badge').textContent = inter.length + ' bản ghi';
 
-  // ?? New customers table ??
+  // ── New customers table ──
   const newTbody = document.getElementById('new-tbody');
   newTbody.innerHTML = '';
   newCust.forEach((r, i) => {
-    const kh  = (col(r,['kh�ch h�ng','customer','ten']) || '').toString().trim();
-    let src   = (col(r,['ngu?n','source','kenh']) || 'Kh�c').toString().trim();
+    const kh  = (col(r,['khách hàng','customer','ten']) || '').toString().trim();
+    let src   = (col(r,['nguồn','source','kenh']) || 'Khác').toString().trim();
     src = src.replace(/^S\d+_\s*/,'');
-    if(kh) {
-      newTbody.innerHTML += `
-        <tr>
-          <td style="color:var(--muted);font-size:11px">${i+1}</td>
-          <td style="font-weight:500">${kh}</td>
-          <td><span class="stage-pill" style="background:rgba(37,99,235,0.15);color:var(--accent2)">${src}</span></td>
-        </tr>`;
-    }
+    newTbody.innerHTML += `
+      <tr>
+        <td style="color:var(--muted);font-size:11px">${i+1}</td>
+        <td style="font-weight:500">${kh}</td>
+        <td><span class="stage-pill" style="background:rgba(37,99,235,0.15);color:var(--accent2)">${src}</span></td>
+      </tr>`;
   });
-  document.getElementById('new-count-badge').textContent = newCust.length + ' kh�ch';
+  document.getElementById('new-count-badge').textContent = newCust.length + ' khách';
 
-  // Chuy?n m�n h�nh ?n Loading, hi?n Dashboard
-  document.getElementById('loading-section').style.display = 'none';
+  // Show dashboard
+  document.getElementById('upload-section').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 }
 
@@ -795,18 +1037,48 @@ function parseDate(v) {
   if (!v) return null;
   if (v instanceof Date) return v;
   const s = v.toString().trim();
+  // dd/MM/yyyy or dd/MM/yyyy HH:mm
   const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
   if (m) return new Date(+m[3], +m[2]-1, +m[1]);
   const d = new Date(s);
   return isNaN(d) ? null : d;
 }
 
-function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
 function showError(msg) {
   const t = document.getElementById('error-toast');
-  t.textContent = '?? ' + msg; t.style.style.display = 'block';
+  t.textContent = '⚠️ ' + msg;
+  t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', 5000);
 }
+</script>
+<script>
+const GOOGLE_SHEETS_EXCEL_URL = '[https://docs.google.com/spreadsheets/d/](https://docs.google.com/spreadsheets/d/)1-IliiCImJcZxlCPlRfUU2tDS1r8tnkgO/export?format=xlsx';
+
+function autoLoadGoogleSheets() {
+  fetch(GOOGLE_SHEETS_EXCEL_URL)
+    .then(response => {
+      if (!response.ok) throw new Error('Kh�ng th? k?t n?i t?i Google Sheets');
+      return response.arrayBuffer();
+    })
+    .then(buffer => {
+      const fakeFile = {
+        name: "Google_Sheets_Live.xlsx"
+      };
+
+      const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
+      const data = parseSheets(wb);
+      renderDashboard(data, fakeFile.name);
+    })
+    .catch(err => {
+      console.error(err);
+    });
+}
+
+window.addEventListener('DOMContentLoaded', autoLoadGoogleSheets);
 </script>
 </body>
 </html>
