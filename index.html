@@ -3,1082 +3,537 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080c18">
 <title>TST · CRM Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap');
-
-  :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface2: #1e2632;
-    --border: #2a3441;
-    --accent: #2563eb;
-    --accent2: #0ea5e9;
-    --green: #10b981;
-    --orange: #f59e0b;
-    --red: #ef4444;
-    --purple: #8b5cf6;
-    --text: #e6edf3;
-    --muted: #8b949e;
-    --card-shadow: 0 4px 24px rgba(0,0,0,0.4);
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'Be Vietnam Pro', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
-
-  /* ── TOP BAR ── */
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 28px;
-    height: 58px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .logo-badge {
-    background: var(--accent);
-    color: #fff;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    padding: 4px 10px;
-    border-radius: 6px;
-  }
-
-  .logo-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    color: var(--text);
-  }
-
-  .logo-sub {
-    font-size: 11px;
-    color: var(--muted);
-    font-weight: 400;
-  }
-
-  #week-label {
-    font-size: 12px;
-    color: var(--muted);
-    background: var(--surface2);
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-  }
-
-  /* ── UPLOAD ZONE ── */
-  #upload-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: calc(100vh - 58px);
-    padding: 40px;
-    gap: 24px;
-  }
-
-  .upload-card {
-    background: var(--surface);
-    border: 2px dashed var(--border);
-    border-radius: 20px;
-    padding: 60px 80px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    max-width: 520px;
-    width: 100%;
-  }
-
-  .upload-card:hover, .upload-card.drag-over {
-    border-color: var(--accent);
-    background: rgba(37,99,235,0.05);
-    transform: translateY(-2px);
-  }
-
-  .upload-icon {
-    font-size: 52px;
-    margin-bottom: 16px;
-    display: block;
-  }
-
-  .upload-card h2 {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-
-  .upload-card p {
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.7;
-  }
-
-  .upload-btn {
-    margin-top: 24px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 12px 28px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: 'Be Vietnam Pro', sans-serif;
-    transition: all 0.2s;
-  }
-
-  .upload-btn:hover {
-    background: #1d4ed8;
-    transform: translateY(-1px);
-  }
-
-  .format-hint {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px 24px;
-    max-width: 520px;
-    width: 100%;
-  }
-
-  .format-hint h4 {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 10px;
-  }
-
-  .format-hint ul {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .format-hint li {
-    font-size: 12px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .format-hint li::before {
-    content: '›';
-    color: var(--accent2);
-    font-size: 14px;
-  }
-
-  .sheet-tag {
-    background: rgba(37,99,235,0.15);
-    color: var(--accent2);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 1px 7px;
-    border-radius: 4px;
-    font-family: monospace;
-  }
-
-  #file-input { display: none; }
-
-  /* ── DASHBOARD ── */
-  #dashboard { display: none; padding: 24px 28px 40px; }
-
-  /* KPI Strip */
-  .kpi-strip {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-
-  .kpi {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 20px;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s;
-  }
-
-  .kpi:hover { transform: translateY(-2px); }
-
-  .kpi::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-  }
-
-  .kpi.blue::before   { background: var(--accent); }
-  .kpi.cyan::before   { background: var(--accent2); }
-  .kpi.green::before  { background: var(--green); }
-  .kpi.orange::before { background: var(--orange); }
-  .kpi.purple::before { background: var(--purple); }
-
-  .kpi-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-
-  .kpi-value {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 36px;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .kpi.blue   .kpi-value { color: var(--accent2); }
-  .kpi.cyan   .kpi-value { color: #38bdf8; }
-  .kpi.green  .kpi-value { color: var(--green); }
-  .kpi.orange .kpi-value { color: var(--orange); }
-  .kpi.purple .kpi-value { color: #a78bfa; }
-
-  .kpi-sub {
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  /* Charts Grid */
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-
-  .chart-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    box-shadow: var(--card-shadow);
-  }
-
-  .chart-card.wide { grid-column: span 2; }
-  .chart-card.full { grid-column: span 3; }
-
-  .chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16px;
-  }
-
-  .chart-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    color: var(--text);
-  }
-
-  .chart-sub {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-
-  .chart-canvas-wrap {
-    position: relative;
-    height: 220px;
-  }
-
-  .chart-canvas-wrap.tall { height: 260px; }
-
-  /* Table */
-  .table-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: var(--card-shadow);
-    margin-top: 16px;
-  }
-
-  .table-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .table-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-  }
-
-  .badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12.5px;
-  }
-
-  thead th {
-    background: var(--surface2);
-    padding: 10px 16px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
-  }
-
-  tbody tr { border-bottom: 1px solid rgba(42,52,65,0.5); transition: background 0.15s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: rgba(255,255,255,0.025); }
-
-  td {
-    padding: 10px 16px;
-    color: var(--text);
-    vertical-align: middle;
-  }
-
-  .stage-pill {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  /* Update bar */
-  .update-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    padding: 12px 18px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-  }
-
-  .update-info { font-size: 12px; color: var(--muted); }
-  .update-info strong { color: var(--text); }
-
-  .update-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: 'Be Vietnam Pro', sans-serif;
-    transition: all 0.2s;
-  }
-
-  .update-btn:hover {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-  }
-
-  /* Funnel */
-  .funnel-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 4px 0;
-  }
-
-  .funnel-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .funnel-label {
-    font-size: 12px;
-    color: var(--muted);
-    width: 90px;
-    flex-shrink: 0;
-    text-align: right;
-  }
-
-  .funnel-bar-wrap {
-    flex: 1;
-    background: var(--surface2);
-    border-radius: 4px;
-    height: 28px;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .funnel-bar {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-    display: flex;
-    align-items: center;
-    padding-left: 10px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #fff;
-    min-width: 32px;
-  }
-
-  .funnel-count {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    width: 30px;
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  /* Scrollable table */
-  .table-scroll { overflow-x: auto; max-height: 320px; overflow-y: auto; }
-  .table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-  .table-scroll::-webkit-scrollbar-track { background: var(--surface2); }
-  .table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-  /* Error toast */
-  #error-toast {
-    position: fixed;
-    bottom: 24px; right: 24px;
-    background: #7f1d1d;
-    border: 1px solid #ef4444;
-    color: #fca5a5;
-    padding: 14px 20px;
-    border-radius: 12px;
-    font-size: 13px;
-    max-width: 380px;
-    display: none;
-    z-index: 999;
-    animation: slideUp 0.3s ease;
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .kpi, .chart-card, .table-card, .update-bar {
-    animation: fadeIn 0.4s ease backwards;
-  }
-
-  .kpi:nth-child(1) { animation-delay: 0.05s; }
-  .kpi:nth-child(2) { animation-delay: 0.10s; }
-  .kpi:nth-child(3) { animation-delay: 0.15s; }
-  .kpi:nth-child(4) { animation-delay: 0.20s; }
-  .kpi:nth-child(5) { animation-delay: 0.25s; }
-
-  @media (max-width: 1100px) {
-    .kpi-strip { grid-template-columns: repeat(3, 1fr); }
-    .charts-grid { grid-template-columns: 1fr 1fr; }
-    .chart-card.wide { grid-column: span 2; }
-    .chart-card.full { grid-column: span 2; }
-  }
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#080c18;--s1:#0e1425;--s2:#141b2d;--s3:#1c2438;
+  --bd:rgba(255,255,255,.07);
+  --blue:#3b7eff;--cyan:#00d4ff;--green:#00e5a0;
+  --amber:#ffb020;--rose:#ff5c7c;--violet:#a259ff;
+  --text:#e8edf8;--muted:#5a6a8a;--m2:#8898b8;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ─ SETUP OVERLAY ─ */
+#setup{position:fixed;inset:0;z-index:200;background:rgba(8,12,24,.97);backdrop-filter:blur(12px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+#setup.gone{display:none}
+.setup-box{max-width:600px;width:100%}
+.setup-title{font-family:var(--fh);font-size:28px;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,var(--text) 40%,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.setup-sub{font-size:13px;color:var(--m2);margin-bottom:32px;line-height:1.7}
+.step{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:22px 24px;margin-bottom:14px}
+.step-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.snum{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));font-size:12px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-title{font-family:var(--fh);font-size:14px;font-weight:700}
+.step p{font-size:12.5px;color:var(--m2);line-height:1.8;margin-bottom:10px}
+.step p:last-child{margin-bottom:0}
+.code{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12px;color:var(--cyan);word-break:break-all;line-height:1.6;margin-top:8px;position:relative}
+.inp-row{display:flex;gap:8px;margin-top:10px}
+#gas-url-input{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);font-family:var(--fb);outline:none;transition:border-color .2s}
+#gas-url-input:focus{border-color:var(--blue)}
+#gas-url-input::placeholder{color:var(--muted)}
+.btn-p{background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;border-radius:8px;color:#fff;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fb);white-space:nowrap;transition:opacity .2s}
+.btn-p:hover{opacity:.88}
+#setup-err{color:var(--rose);font-size:12px;margin-top:8px;display:none}
+.tag{display:inline-block;background:rgba(59,126,255,.15);color:#7eadff;border-radius:4px;padding:1px 7px;font-family:monospace;font-size:11px}
+.step strong{color:var(--text)}
+
+/* ─ HEADER ─ */
+header{position:sticky;top:0;z-index:50;background:rgba(8,12,24,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:12px}
+.lm{width:32px;height:32px;background:linear-gradient(135deg,var(--blue),var(--cyan));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
+.lt{font-family:var(--fh);font-size:15px;font-weight:700}
+.lt span{color:var(--m2);font-weight:400}
+.hright{display:flex;align-items:center;gap:10px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(0,229,160,.4);animation:pd 2s infinite}
+.dot.load{background:var(--amber);animation:none;box-shadow:none}
+.dot.err{background:var(--rose);animation:none;box-shadow:none}
+@keyframes pd{0%{box-shadow:0 0 0 0 rgba(0,229,160,.5)}70%{box-shadow:0 0 0 6px rgba(0,229,160,0)}100%{box-shadow:0 0 0 0 rgba(0,229,160,0)}}
+#stxt{font-size:11.5px;color:var(--m2)}
+.rbtn{background:var(--s2);border:1px solid var(--bd);color:var(--m2);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--fb);display:flex;align-items:center;gap:6px;transition:all .2s}
+.rbtn:hover{background:var(--s3);color:var(--text)}
+.rbtn.spin .ri{animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.settings-btn{background:none;border:1px solid var(--bd);color:var(--muted);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;transition:all .2s}
+.settings-btn:hover{background:var(--s2);color:var(--text)}
+
+/* ─ MAIN ─ */
+main{max-width:1380px;margin:0 auto;padding:22px 20px 60px}
+
+/* PERIOD BAR */
+.pbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.pinfo{font-size:12px;color:var(--m2)}
+.pinfo strong{color:var(--text);font-weight:600}
+.pbadge{background:rgba(59,126,255,.12);border:1px solid rgba(59,126,255,.25);color:#7eadff;border-radius:20px;padding:4px 14px;font-size:11.5px;font-weight:600}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:18px 16px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;cursor:default}
+.kpi:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.12)}
+.kg{position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;filter:blur(28px);opacity:.3;pointer-events:none}
+.ki{font-size:20px;margin-bottom:10px;display:block}
+.kl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:6px}
+.kv{font-family:var(--fh);font-size:34px;font-weight:800;line-height:1;margin-bottom:4px}
+.ks{font-size:11px;color:var(--muted)}
+.kb .kv{color:var(--blue)} .kb .kg{background:var(--blue)}
+.kc .kv{color:var(--cyan)} .kc .kg{background:var(--cyan)}
+.kgr .kv{color:var(--green)} .kgr .kg{background:var(--green)}
+.kam .kv{color:var(--amber)} .kam .kg{background:var(--amber)}
+.kvi .kv{color:var(--violet)} .kvi .kg{background:var(--violet)}
+
+/* CHART GRID */
+.cgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:20px}
+.s2{grid-column:span 2}
+.ch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+.ct{font-family:var(--fh);font-size:13.5px;font-weight:700}
+.cs{font-size:11px;color:var(--muted);margin-top:3px}
+.cw{position:relative;height:200px} .cw.md{height:230px}
+
+/* FUNNEL */
+.funnel{display:flex;flex-direction:column;gap:9px;padding-top:4px}
+.fr{display:flex;align-items:center;gap:10px}
+.fl{font-size:11.5px;color:var(--m2);width:92px;flex-shrink:0;text-align:right}
+.ft{flex:1;height:30px;background:var(--s2);border-radius:6px;overflow:hidden}
+.fb{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:700;color:rgba(255,255,255,.9);transition:width 1s cubic-bezier(.22,1,.36,1);min-width:0}
+.fc{font-family:var(--fh);font-size:17px;font-weight:700;width:28px;text-align:right;flex-shrink:0}
+
+/* TABLE */
+.twrap{overflow-x:auto}
+.dtbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.dtbl thead th{padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:var(--s2);border-bottom:1px solid var(--bd);white-space:nowrap}
+.dtbl tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
+.dtbl tbody tr:hover{background:rgba(255,255,255,.025)}
+.dtbl tbody tr:last-child{border-bottom:none}
+.dtbl td{padding:10px 14px;vertical-align:middle}
+.sb{max-height:300px;overflow-y:auto}
+.sb::-webkit-scrollbar{width:4px} .sb::-webkit-scrollbar-track{background:var(--s2)} .sb::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+
+/* ERROR */
+#errbox{display:none;background:rgba(255,92,124,.07);border:1px solid rgba(255,92,124,.25);border-radius:var(--r);padding:18px 22px;margin-bottom:20px;font-size:13px;color:#ff9ab0;line-height:1.7}
+#errbox strong{color:var(--rose);display:block;margin-bottom:6px;font-size:14px}
+#errbox code{background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+
+footer{text-align:center;padding:24px;font-size:11px;color:var(--muted);border-top:1px solid var(--bd)}
+footer a{color:var(--blue);text-decoration:none}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.kpi{animation:fadeUp .45s ease backwards}
+.kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.1s}.kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.2s}.kpi:nth-child(5){animation-delay:.25s}
+.card{animation:fadeUp .45s ease .15s backwards}
+
+@media(max-width:960px){
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .cgrid{grid-template-columns:1fr 1fr} .s2{grid-column:span 2}
+}
+@media(max-width:640px){
+  .kpis{grid-template-columns:1fr 1fr}
+  .cgrid{grid-template-columns:1fr} .s2{grid-column:span 1}
+  header{padding:0 14px} main{padding:16px 12px 48px}
+  .lt span{display:none} .settings-btn span{display:none}
+}
 </style>
 </head>
 <body>
 
+<!-- ══ SETUP OVERLAY ══════════════════════════════════════════════ -->
+<div id="setup">
+  <div class="setup-box">
+    <div class="setup-title">Kết nối Google Sheets</div>
+    <div class="setup-sub">Làm theo 3 bước dưới đây, chỉ cần làm 1 lần duy nhất.<br>Sau đó quản lý có thể xem dashboard online mọi lúc.</div>
+
+    <div class="step">
+      <div class="step-head"><span class="snum">1</span><div class="step-title">Tạo Google Apps Script làm cầu nối</div></div>
+      <p>Mở Google Sheets của bạn → nhấn <strong>Extensions (Tiện ích mở rộng) → Apps Script</strong> → xóa code cũ → dán đoạn code bên dưới vào → nhấn <strong>Save (💾)</strong></p>
+      <div class="code" id="gas-code">// Dán vào Apps Script của Google Sheets
+// Extensions > Apps Script > xóa code cũ > dán vào > Save
+
+const SHEET_ID = '1IdTXke1HYTPyKDvF-Jv8ejQqRja4LnlHu-rp_z7jSXg';
+
+function doGet(e) {
+  const sheetName = e.parameter.sheet || 'Tương tác';
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const ws = ss.getSheetByName(sheetName);
+    if (!ws) return out({ error: 'Sheet không tồn tại: ' + sheetName });
+    const data = ws.getDataRange().getValues();
+    if (data.length < 2) return out({ headers: [], rows: [] });
+    const headers = data[0].map(h => h.toString().trim());
+    const rows = data.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => {
+        let v = row[i];
+        if (v instanceof Date)
+          v = Utilities.formatDate(v, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm');
+        obj[h] = (v !== null && v !== undefined) ? v.toString().trim() : '';
+      });
+      return obj;
+    }).filter(r => Object.values(r).some(v => v !== ''));
+    return out({ headers, rows, count: rows.length });
+  } catch(err) {
+    return out({ error: err.message });
+  }
+}
+
+function out(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+      <button class="btn-p" style="margin-top:10px;font-size:12px;padding:8px 16px" onclick="copyCode()">📋 Copy code</button>
+      <span id="copied" style="font-size:12px;color:var(--green);margin-left:10px;display:none">✓ Đã copy!</span>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="snum">2</span><div class="step-title">Deploy Apps Script thành Web App</div></div>
+      <p>Trong Apps Script → nhấn nút <strong>Deploy → New deployment</strong> → chọn type <strong>"Web app"</strong> → điền:</p>
+      <p>• <strong>Execute as:</strong> Me (your Google account)<br>• <strong>Who has access:</strong> <strong style="color:var(--amber)">Anyone</strong> (quan trọng — phải chọn Anyone)<br><br>→ Nhấn <strong>Deploy</strong> → copy <strong>Web app URL</strong> được tạo ra.</p>
+      <p style="color:var(--amber);font-size:12px">⚠ Lần đầu sẽ có popup "Review permissions" → nhấn Advanced → Go to (unsafe) → Allow. Đây là script của chính bạn, hoàn toàn an toàn.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="snum">3</span><div class="step-title">Dán Web App URL vào đây</div></div>
+      <p>Dán URL vừa copy từ bước 2 vào ô bên dưới → nhấn <strong>Kết nối</strong>. URL có dạng:</p>
+      <div class="code">https://script.google.com/macros/s/AKfy.../exec</div>
+      <div class="inp-row" style="margin-top:12px">
+        <input id="gas-url-input" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+        <button class="btn-p" onclick="connect()">Kết nối →</button>
+      </div>
+      <div id="setup-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HEADER ════════════════════════════════════════════════════ -->
 <header>
   <div class="logo">
-    <span class="logo-badge">TST</span>
-    <div>
-      <div class="logo-title">CRM Dashboard <span style="color:var(--muted);font-weight:400">· Doosan Bobcat</span></div>
-    </div>
+    <div class="lm">TST</div>
+    <div class="lt">CRM Dashboard <span>· Doosan Bobcat Vietnam</span></div>
   </div>
-  <span id="week-label">Chưa có dữ liệu</span>
+  <div class="hright">
+    <div class="dot load" id="sdot"></div>
+    <span id="stxt">Chờ kết nối...</span>
+    <button class="rbtn" id="rbtn" onclick="loadAll()"><span class="ri">↺</span> Làm mới</button>
+    <button class="settings-btn" onclick="showSetup()" title="Cài đặt">⚙ <span>Cài đặt</span></button>
+  </div>
 </header>
 
-<!-- UPLOAD SCREEN -->
-<div id="upload-section">
-  <div class="upload-card" id="drop-zone">
-    <span class="upload-icon">📊</span>
-    <h2>Upload file CRM từ Getfly</h2>
-    <p>Kéo thả file Excel (.xlsx) xuất từ hệ thống Getfly<br>vào đây hoặc nhấn nút bên dưới để chọn file.</p>
-    <button class="upload-btn" onclick="document.getElementById('file-input').click()">
-      ↑ &nbsp;Chọn file Excel
-    </button>
-    <input type="file" id="file-input" accept=".xlsx,.xls">
+<!-- ══ DASHBOARD ═════════════════════════════════════════════════ -->
+<main>
+  <div id="errbox"><strong>⚠ Không thể tải dữ liệu</strong><span id="errmsg"></span></div>
+
+  <div class="pbar">
+    <div class="pinfo">Cập nhật: <strong id="upd">—</strong> &nbsp;·&nbsp; Tự động làm mới sau <strong id="cdtxt">5:00</strong></div>
+    <div class="pbadge" id="pbadge">—</div>
   </div>
 
-  <div class="format-hint">
-    <h4>📋 File cần có các sheet sau</h4>
-    <ul>
-      <li><span class="sheet-tag">Khách hàng mới</span> — Cột: Khách hàng, Nguồn khách hàng</li>
-      <li><span class="sheet-tag">Tương tác</span> — Cột: Người thực hiện, Mối quan hệ, Thời gian thực hiện</li>
-      <li><span class="sheet-tag">Đơn hàng</span> / <span class="sheet-tag">Doanh thu</span> — Cột: Giá trị (nếu có)</li>
-    </ul>
-  </div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="dashboard">
-  <div class="update-bar">
-    <div class="update-info">
-      📁 File: <strong id="file-name-display">—</strong>
-      &nbsp;·&nbsp; Cập nhật lúc: <strong id="last-updated">—</strong>
-      &nbsp;·&nbsp; <span id="data-period">—</span>
-    </div>
-    <button class="update-btn" onclick="document.getElementById('file-input').click()">
-      ↺ &nbsp;Upload file mới
-    </button>
+  <div class="kpis">
+    <div class="kpi kb"><div class="kg"></div><span class="ki">🆕</span><div class="kl">Khách hàng mới</div><div class="kv" id="kn">—</div><div class="ks">trong kỳ</div></div>
+    <div class="kpi kc"><div class="kg"></div><span class="ki">💬</span><div class="kl">Tổng tương tác</div><div class="kv" id="ki">—</div><div class="ks">lượt liên hệ</div></div>
+    <div class="kpi kgr"><div class="kg"></div><span class="ki">✅</span><div class="kl">Đã chốt</div><div class="kv" id="kc">—</div><div class="ks">khách hàng</div></div>
+    <div class="kpi kam"><div class="kg"></div><span class="ki">📈</span><div class="kl">Tỷ lệ chuyển đổi</div><div class="kv" id="kr">—</div><div class="ks">chốt / KH mới</div></div>
+    <div class="kpi kvi"><div class="kg"></div><span class="ki">👥</span><div class="kl">Nhân viên sale</div><div class="kv" id="ks_">—</div><div class="ks">đang hoạt động</div></div>
   </div>
 
-  <div class="kpi-strip">
-    <div class="kpi blue">
-      <div class="kpi-label">Khách hàng mới</div>
-      <div class="kpi-value" id="k-new">—</div>
-      <div class="kpi-sub">tuần này</div>
+  <div class="cgrid">
+    <div class="card">
+      <div class="ch"><div><div class="ct">Nguồn khách hàng</div><div class="cs">Phân bổ kênh marketing</div></div></div>
+      <div class="cw"><canvas id="csource"></canvas></div>
     </div>
-    <div class="kpi cyan">
-      <div class="kpi-label">Tổng tương tác</div>
-      <div class="kpi-value" id="k-inter">—</div>
-      <div class="kpi-sub">lượt bình luận / liên hệ</div>
+    <div class="card">
+      <div class="ch"><div><div class="ct">Phễu chuyển đổi</div><div class="cs">Theo giai đoạn mối quan hệ</div></div></div>
+      <div id="funnel" class="funnel"></div>
     </div>
-    <div class="kpi green">
-      <div class="kpi-label">Đã chốt đơn</div>
-      <div class="kpi-value" id="k-close">—</div>
-      <div class="kpi-sub">khách hàng</div>
+    <div class="card">
+      <div class="ch"><div><div class="ct">Theo nhân viên sale</div><div class="cs">Số tương tác mỗi người</div></div></div>
+      <div class="cw"><canvas id="cstaff"></canvas></div>
     </div>
-    <div class="kpi orange">
-      <div class="kpi-label">Tỷ lệ chuyển đổi</div>
-      <div class="kpi-value" id="k-rate">—</div>
-      <div class="kpi-sub">Chốt / Tổng KH</div>
+    <div class="card s2">
+      <div class="ch"><div><div class="ct">Doanh thu / Đơn hàng</div><div class="cs" id="revsub">Giá trị theo nhân viên (triệu đồng)</div></div></div>
+      <div class="cw md"><canvas id="crev"></canvas></div>
     </div>
-    <div class="kpi purple">
-      <div class="kpi-label">Nhân viên sale</div>
-      <div class="kpi-value" id="k-staff">—</div>
-      <div class="kpi-sub">người hoạt động</div>
+    <div class="card">
+      <div class="ch"><div><div class="ct">Phân bổ giai đoạn</div><div class="cs">Tỷ lệ % mối quan hệ</div></div></div>
+      <div class="cw"><canvas id="cstage"></canvas></div>
     </div>
   </div>
 
-  <div class="charts-grid">
-    <!-- Pie: Source -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Nguồn khách hàng mới</div>
-          <div class="chart-sub">Phân bổ theo kênh marketing</div>
-        </div>
-      </div>
-      <div class="chart-canvas-wrap"><canvas id="c-source"></canvas></div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="ch">
+      <div><div class="ct">📋 Chi tiết tương tác</div><div class="cs">Toàn bộ hoạt động trong kỳ</div></div>
+      <span class="pill" id="ibadge" style="background:rgba(59,126,255,.15);color:#7eadff;font-size:11px;font-weight:700">0</span>
     </div>
-
-    <!-- Funnel: Stages -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Phễu chuyển đổi</div>
-          <div class="chart-sub">Mối quan hệ theo giai đoạn</div>
-        </div>
-      </div>
-      <div id="funnel-wrap" class="funnel-wrap" style="margin-top:8px"></div>
-    </div>
-
-    <!-- Bar: Sales person -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Hoạt động theo sale</div>
-          <div class="chart-sub">Số tương tác mỗi nhân viên</div>
-        </div>
-      </div>
-      <div class="chart-canvas-wrap"><canvas id="c-staff"></canvas></div>
-    </div>
-
-    <!-- Doughnut: Stage breakdown -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Phân bổ Mối quan hệ</div>
-          <div class="chart-sub">Tỷ lệ % các giai đoạn</div>
-        </div>
-      </div>
-      <div class="chart-canvas-wrap"><canvas id="c-stage"></canvas></div>
-    </div>
-
-    <!-- Bar: Revenue (if available) -->
-    <div class="chart-card wide">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Doanh thu / Đơn hàng</div>
-          <div class="chart-sub" id="rev-sub">Giá trị đơn hàng theo nhân viên (nếu có dữ liệu)</div>
-        </div>
-      </div>
-      <div class="chart-canvas-wrap tall"><canvas id="c-revenue"></canvas></div>
+    <div class="twrap">
+      <table class="dtbl"><thead><tr><th>#</th><th>Nhân viên</th><th>Khách hàng</th><th>Giai đoạn</th><th>Ngày</th><th>Nội dung tương tác</th></tr></thead></table>
+      <div class="sb"><table class="dtbl"><tbody id="itbody"></tbody></table></div>
     </div>
   </div>
 
-  <!-- Interactions table -->
-  <div class="table-card">
-    <div class="table-header">
-      <div class="table-title">📋 Chi tiết tương tác</div>
-      <span class="badge" id="inter-count-badge" style="background:rgba(37,99,235,0.15);color:var(--accent2)">0 bản ghi</span>
+  <div class="card">
+    <div class="ch">
+      <div><div class="ct">🆕 Khách hàng mới</div><div class="cs">Danh sách trong kỳ</div></div>
+      <span class="pill" id="nbadge" style="background:rgba(0,229,160,.12);color:#00e5a0;font-size:11px;font-weight:700">0</span>
     </div>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nhân viên</th>
-            <th>Khách hàng</th>
-            <th>Giai đoạn</th>
-            <th>Thời gian</th>
-            <th>Nội dung tóm tắt</th>
-          </tr>
-        </thead>
-        <tbody id="inter-tbody"></tbody>
-      </table>
+    <div class="twrap">
+      <table class="dtbl"><thead><tr><th>#</th><th>Tên khách hàng</th><th>Nguồn</th></tr></thead></table>
+      <div class="sb"><table class="dtbl"><tbody id="ntbody"></tbody></table></div>
     </div>
   </div>
+</main>
 
-  <!-- New customers table -->
-  <div class="table-card" style="margin-top:16px">
-    <div class="table-header">
-      <div class="table-title">🆕 Khách hàng mới</div>
-      <span class="badge" id="new-count-badge" style="background:rgba(16,185,129,0.15);color:var(--green)">0 khách</span>
-    </div>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Tên khách hàng</th>
-            <th>Nguồn</th>
-          </tr>
-        </thead>
-        <tbody id="new-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<div id="error-toast"></div>
+<footer>
+  TST · Doosan Bobcat Vietnam &nbsp;|&nbsp;
+  Hotline: <a href="tel:0886685963">0886 685 963</a> · <a href="tel:0886907063">0886 907 063</a>
+  &nbsp;|&nbsp; <a href="https://xenangdoosanbobcat.vn" target="_blank">xenangdoosanbobcat.vn</a>
+  &nbsp;|&nbsp; <a href="https://www.facebook.com/XeNangDoosanBobcatTST" target="_blank">Facebook</a>
+</footer>
 
 <script>
-// ── Chart instances ──
-let charts = {};
+// ════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════
+const STORE_KEY   = 'tst_gas_url';
+const REFRESH_MS  = 5 * 60 * 1000;
 
-const STAGE_ORDER  = ['Mới','Tiếp cận','Có Nhu Cầu','Tiềm năng','Chốt'];
-const STAGE_COLORS = {
-  'Mới':        '#60a5fa',
-  'Tiếp cận':   '#facc15',
-  'Có Nhu Cầu': '#34d399',
-  'Tiềm năng':  '#fb923c',
-  'Chốt':       '#a78bfa',
+const STAGE_ORDER = ['Mới','Tiếp cận','Có Nhu Cầu','Tiềm năng','Chốt'];
+const STAGE_CLR   = {
+  'Mới':'#3b7eff','Tiếp cận':'#facc15',
+  'Có Nhu Cầu':'#00e5a0','Tiềm năng':'#fb923c','Chốt':'#a259ff'
 };
-const SRC_COLORS = ['#3b82f6','#06b6d4','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899'];
-const STAFF_COLORS = ['#3b82f6','#06b6d4','#8b5cf6','#10b981','#f59e0b'];
+const PAL = ['#3b7eff','#00d4ff','#00e5a0','#ffb020','#a259ff','#ff5c7c','#06b6d4'];
 
-// ── File input ──
-const fileInput = document.getElementById('file-input');
-fileInput.addEventListener('change', e => {
-  if (e.target.files[0]) processFile(e.target.files[0]);
-});
+// Tên cột chính xác từ Getfly
+const C = {
+  nn:'Khách hàng', ns:'Nguồn khách hàng',
+  ip:'Người thực hiện', ik:'Khách hàng',
+  ist:'Mối quan hệ', it:'Thời gian thực hiện', ic:'Nội dung tương tác',
+  rv:'Giá trị', rp:'Người thực hiện',
+};
 
-// ── Drag & Drop ──
-const dropZone = document.getElementById('drop-zone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('drag-over');
-  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
-});
+let charts={}, cdsec=300, cdT, rfT, GAS_URL='';
 
-// ── Process ──
-function processFile(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-      const data = parseSheets(wb);
-      renderDashboard(data, file.name);
-    } catch(err) {
-      showError('Không đọc được file: ' + err.message);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
+// ── BOOT ────────────────────────────────────────────────
+(function(){
+  const saved = localStorage.getItem(STORE_KEY);
+  if(saved){ GAS_URL=saved; hideSetup(); loadAll(); startAuto(); }
+})();
 
-function parseSheets(wb) {
-  const find = (keywords) => {
-    for (const name of wb.SheetNames) {
-      const n = name.toLowerCase().trim();
-      if (keywords.some(k => n.includes(k))) return wb.Sheets[name];
-    }
-    return null;
-  };
-
-  const toRows = (ws) => {
-    if (!ws) return [];
-    return XLSX.utils.sheet_to_json(ws, { defval: '' });
-  };
-
-  // Find sheets
-  const wsNew    = find(['khách hàng mới','khach hang moi','new']);
-  const wsInter  = find(['tương tác','tuong tac','interaction']);
-  const wsOrder  = find(['đơn hàng','don hang','order']);
-  const wsRevenue= find(['doanh thu','revenue']);
-
-  const newCust  = toRows(wsNew);
-  const inter    = toRows(wsInter);
-  const orders   = toRows(wsOrder);
-  const revenue  = toRows(wsRevenue);
-
-  return { newCust, inter, orders, revenue };
-}
-
-// ── Column finder ──
-function col(row, candidates) {
-  for (const k of Object.keys(row)) {
-    const kl = k.toLowerCase().trim();
-    if (candidates.some(c => kl.includes(c))) return row[k];
+// ── SETUP ────────────────────────────────────────────────
+function connect(){
+  const v = document.getElementById('gas-url-input').value.trim();
+  const err = document.getElementById('setup-err');
+  if(!v || !v.includes('script.google.com')){
+    showSetupErr('URL không hợp lệ. Phải bắt đầu bằng https://script.google.com/macros/s/...');
+    return;
   }
-  return '';
+  err.style.display='none';
+  GAS_URL = v;
+  localStorage.setItem(STORE_KEY, v);
+  hideSetup();
+  loadAll();
+  startAuto();
 }
 
-// ── Render ──
-function renderDashboard(data, fileName) {
-  const { newCust, inter, orders, revenue } = data;
+function showSetup(){
+  document.getElementById('setup').classList.remove('gone');
+  const saved=localStorage.getItem(STORE_KEY);
+  if(saved) document.getElementById('gas-url-input').value=saved;
+}
+function hideSetup(){ document.getElementById('setup').classList.add('gone'); }
+function showSetupErr(m){
+  const e=document.getElementById('setup-err');
+  e.textContent=m; e.style.cssText='color:#ff5c7c;font-size:12px;margin-top:8px;display:block';
+}
 
-  // KPI
-  const stages = inter.map(r => (col(r,['mối quan hệ','quan he','stage','relationship']) || '').toString().trim());
-  const closedCount = stages.filter(s => s === 'Chốt').length;
-  const uniqueKH    = new Set(inter.map(r => col(r,['mã khách','khách hàng','customer','kh']) )).size;
-  const staff       = inter.map(r => (col(r,['người thực hiện','nhan vien','staff','người']) || '').toString().trim());
-  const uniqueStaff = new Set(staff.filter(Boolean)).size;
+function copyCode(){
+  const code=document.getElementById('gas-code').textContent;
+  navigator.clipboard.writeText(code).then(()=>{
+    const el=document.getElementById('copied');
+    el.style.display='inline'; setTimeout(()=>el.style.display='none',2500);
+  });
+}
 
-  document.getElementById('k-new').textContent   = newCust.length;
-  document.getElementById('k-inter').textContent = inter.length;
-  document.getElementById('k-close').textContent = closedCount;
-  document.getElementById('k-rate').textContent  = newCust.length
-    ? Math.round(closedCount / newCust.length * 100) + '%'
-    : '—';
-  document.getElementById('k-staff').textContent = uniqueStaff;
+// ── LOAD ALL ─────────────────────────────────────────────
+async function loadAll(){
+  if(!GAS_URL) return;
+  setSt('load','Đang tải...');
+  document.getElementById('rbtn').classList.add('spin');
+  document.getElementById('errbox').style.display='none';
 
-  // Week label
-  const times = inter
-    .map(r => col(r,['thời gian','time','ngày','date']))
-    .map(v => parseDate(v))
-    .filter(Boolean)
-    .sort((a,b) => a-b);
+  try{
+    const [newRows,interRows,orderRows,revRows] = await Promise.all([
+      fetchSheet('Khách hàng mới'),
+      fetchSheet('Tương tác'),
+      fetchSheet('Đơn hàng'),
+      fetchSheet('Doanh thu'),
+    ]);
+    render(newRows, interRows, [...orderRows,...revRows]);
+    const t=new Date();
+    setSt('ok','Cập nhật '+fmt(t));
+    set('upd', fmt(t));
+    resetCd();
+  }catch(e){
+    setSt('err','Lỗi tải dữ liệu');
+    showErr(e.message + '<br><br>Kiểm tra: <br>① Apps Script đã Deploy chưa?<br>② "Who has access" đã chọn <code>Anyone</code> chưa?<br>③ URL dán vào có đúng không?');
+  }finally{
+    document.getElementById('rbtn').classList.remove('spin');
+  }
+}
 
-  if (times.length) {
-    const fmt = d => d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'});
-    document.getElementById('week-label').textContent =
-      `Dữ liệu: ${fmt(times[0])} – ${fmt(times[times.length-1])}`;
-    document.getElementById('data-period').innerHTML =
-      `Khoảng thời gian: <strong>${fmt(times[0])} – ${fmt(times[times.length-1])}</strong>`;
+async function fetchSheet(name){
+  const url = GAS_URL + '?sheet=' + encodeURIComponent(name);
+  const res  = await fetch(url);
+  if(!res.ok) throw new Error('HTTP ' + res.status + ' khi gọi ' + name);
+  const json = await res.json();
+  if(json.error) throw new Error(json.error);
+  return json.rows || [];
+}
+
+// ── RENDER ───────────────────────────────────────────────
+function render(nR, iR, rvR){
+  const stages  = iR.map(r=>(r[C.ist]||'').trim());
+  const persons = iR.map(r=>(r[C.ip]||'').trim());
+  const closed  = stages.filter(s=>s==='Chốt').length;
+  const uStaff  = new Set(persons.filter(Boolean)).size;
+
+  set('kn', nR.length);
+  set('ki', iR.length);
+  set('kc', closed);
+  set('kr', nR.length ? Math.round(closed/nR.length*100)+'%' : '—');
+  set('ks_', uStaff);
+
+  // Period
+  const times=iR.map(r=>parseVN(r[C.it])).filter(Boolean).sort((a,b)=>a-b);
+  if(times.length){
+    const fd=d=>d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+    set('pbadge', fd(times[0])+' – '+fd(times[times.length-1]));
   }
 
-  document.getElementById('file-name-display').textContent = fileName;
-  document.getElementById('last-updated').textContent =
-    new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-
-  // ── Source chart ──
-  const srcMap = {};
-  newCust.forEach(r => {
-    let s = (col(r,['nguồn','source','kenh']) || 'Khác').toString().trim();
-    s = s.replace(/^S\d+_\s*/,'');
-    srcMap[s] = (srcMap[s]||0)+1;
+  // Source doughnut
+  const srcMap={};
+  nR.forEach(r=>{
+    let s=(r[C.ns]||'Khác').replace(/^S\d+[_ ]*/,'').trim()||'Khác';
+    srcMap[s]=(srcMap[s]||0)+1;
   });
-  const srcLabels = Object.keys(srcMap);
-  const srcVals   = srcLabels.map(k => srcMap[k]);
+  const sl=Object.keys(srcMap);
+  mkChart('csource','doughnut',
+    {labels:sl,datasets:[{data:sl.map(k=>srcMap[k]),backgroundColor:PAL.slice(0,sl.length),borderColor:'#0e1425',borderWidth:3,hoverOffset:8}]},
+    {cutout:'62%',plugins:{legend:{position:'right',labels:{color:'#8898b8',font:{family:'DM Sans',size:11},padding:12,boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} KH`}}}}
+  );
 
-  destroyChart('c-source');
-  charts['c-source'] = new Chart(document.getElementById('c-source'), {
-    type: 'doughnut',
-    data: {
-      labels: srcLabels,
-      datasets: [{
-        data: srcVals,
-        backgroundColor: SRC_COLORS.slice(0, srcLabels.length),
-        borderColor: '#161b22',
-        borderWidth: 3,
-        hoverOffset: 8,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position:'right', labels:{ color:'#8b949e', font:{ family:'Be Vietnam Pro', size:11 }, padding:14, boxWidth:12 }},
-        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} KH` }}
-      },
-      cutout: '60%'
-    }
+  // Funnel
+  const stgMap={};
+  stages.forEach(s=>{if(s) stgMap[s]=(stgMap[s]||0)+1});
+  const maxV=Math.max(...Object.values(stgMap),1);
+  const fc=document.getElementById('funnel'); fc.innerHTML='';
+  STAGE_ORDER.forEach(stg=>{
+    const cnt=stgMap[stg]||0, pct=Math.round(cnt/maxV*100), col=STAGE_CLR[stg];
+    fc.innerHTML+=`<div class="fr">
+      <div class="fl">${stg}</div>
+      <div class="ft"><div class="fb" style="width:0%;background:${col}" data-w="${pct}%">${cnt||''}</div></div>
+      <div class="fc" style="color:${col}">${cnt}</div></div>`;
   });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    fc.querySelectorAll('.fb').forEach(b=>b.style.width=b.dataset.w);
+  }));
 
-  // ── Funnel ──
-  const stageMap = {};
-  stages.forEach(s => { if(s) stageMap[s] = (stageMap[s]||0)+1; });
-  const maxStage = Math.max(...Object.values(stageMap), 1);
-  const funnelWrap = document.getElementById('funnel-wrap');
-  funnelWrap.innerHTML = '';
-  STAGE_ORDER.forEach(stg => {
-    const cnt = stageMap[stg] || 0;
-    const pct = Math.round(cnt / maxStage * 100);
-    const color = STAGE_COLORS[stg] || '#60a5fa';
-    funnelWrap.innerHTML += `
-      <div class="funnel-row">
-        <div class="funnel-label">${stg}</div>
-        <div class="funnel-bar-wrap">
-          <div class="funnel-bar" style="width:${pct||0}%;background:${color}">${cnt > 0 ? cnt : ''}</div>
-        </div>
-        <div class="funnel-count" style="color:${color}">${cnt}</div>
-      </div>`;
+  // Staff bar
+  const stM={};
+  persons.forEach(p=>{if(p) stM[p]=(stM[p]||0)+1});
+  const stL=Object.keys(stM).sort((a,b)=>stM[b]-stM[a]);
+  const sn=n=>n.split(' ').slice(-2).join(' ');
+  mkChart('cstaff','bar',
+    {labels:stL.map(sn),datasets:[{label:'Tương tác',data:stL.map(k=>stM[k]),backgroundColor:PAL.slice(0,stL.length),borderRadius:6,borderSkipped:false}]},
+    {plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} tương tác`}}},scales:{x:{ticks:{color:'#5a6a8a',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#5a6a8a',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}
+  );
+
+  // Stage doughnut
+  const stgL=STAGE_ORDER.filter(s=>stgMap[s]);
+  mkChart('cstage','doughnut',
+    {labels:stgL,datasets:[{data:stgL.map(s=>stgMap[s]),backgroundColor:stgL.map(s=>STAGE_CLR[s]),borderColor:'#0e1425',borderWidth:3,hoverOffset:8}]},
+    {cutout:'55%',plugins:{legend:{position:'right',labels:{color:'#8898b8',font:{family:'DM Sans',size:11},padding:12,boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${iR.length?Math.round(c.raw/iR.length*100):0}%)`}}}}
+  );
+
+  // Revenue bar
+  const rvM={};
+  rvR.forEach(r=>{
+    const p=(r[C.rp]||'').trim();
+    const v=parseFloat((r[C.rv]||'').replace(/[^0-9.]/g,''))||0;
+    if(p&&v>0) rvM[p]=(rvM[p]||0)+v;
   });
-
-  // ── Staff bar ──
-  const staffMap = {};
-  staff.forEach(s => { if(s) staffMap[s] = (staffMap[s]||0)+1; });
-  const staffLabels = Object.keys(staffMap).sort((a,b) => staffMap[b]-staffMap[a]);
-  const staffVals   = staffLabels.map(k => staffMap[k]);
-  const shortName = n => n.split(' ').slice(-2).join(' ');
-
-  destroyChart('c-staff');
-  charts['c-staff'] = new Chart(document.getElementById('c-staff'), {
-    type: 'bar',
-    data: {
-      labels: staffLabels.map(shortName),
-      datasets: [{
-        label: 'Tương tác',
-        data: staffVals,
-        backgroundColor: STAFF_COLORS.slice(0, staffLabels.length),
-        borderRadius: 6,
-        borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ` ${ctx.raw} tương tác` }}},
-      scales: {
-        x: { ticks:{ color:'#8b949e', font:{size:11} }, grid:{ display:false } },
-        y: { ticks:{ color:'#8b949e', font:{size:11} }, grid:{ color:'rgba(255,255,255,0.04)' }, beginAtZero:true }
-      }
-    }
-  });
-
-  // ── Stage doughnut ──
-  const stageLabels = STAGE_ORDER.filter(s => stageMap[s]);
-  const stageVals   = stageLabels.map(s => stageMap[s]);
-  const stageColors = stageLabels.map(s => STAGE_COLORS[s] || '#60a5fa');
-
-  destroyChart('c-stage');
-  charts['c-stage'] = new Chart(document.getElementById('c-stage'), {
-    type: 'doughnut',
-    data: {
-      labels: stageLabels,
-      datasets: [{
-        data: stageVals,
-        backgroundColor: stageColors,
-        borderColor: '#161b22',
-        borderWidth: 3,
-        hoverOffset: 8,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position:'right', labels:{ color:'#8b949e', font:{ family:'Be Vietnam Pro', size:11 }, padding:14, boxWidth:12 }},
-        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/inter.length*100)}%)` }}
-      },
-      cutout: '55%'
-    }
-  });
-
-  // ── Revenue chart ──
-  const allOrders = [...orders, ...revenue];
-  const revMap = {};
-  allOrders.forEach(r => {
-    const person = (col(r,['người thực hiện','nhan vien','staff']) || '').toString().trim();
-    const val    = parseFloat((col(r,['giá trị','gia tri','value','revenue','amount']) || '0').toString().replace(/[^0-9.]/g,'')) || 0;
-    if (person && val > 0) revMap[person] = (revMap[person]||0) + val;
-  });
-
-  destroyChart('c-revenue');
-  const revLabels = Object.keys(revMap).sort((a,b) => revMap[b]-revMap[a]);
-  if (revLabels.length) {
-    document.getElementById('rev-sub').textContent = 'Tổng giá trị đơn hàng theo nhân viên (VNĐ)';
-    charts['c-revenue'] = new Chart(document.getElementById('c-revenue'), {
-      type: 'bar',
-      data: {
-        labels: revLabels.map(shortName),
-        datasets: [{
-          label: 'Doanh thu (VNĐ)',
-          data: revLabels.map(k => revMap[k]),
-          backgroundColor: 'rgba(37,99,235,0.7)',
-          borderColor: '#2563eb',
-          borderWidth: 1,
-          borderRadius: 6,
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend:{ display:false },
-          tooltip:{ callbacks:{ label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + ' đ' }}
-        },
-        scales: {
-          x:{ ticks:{ color:'#8b949e', font:{size:11} }, grid:{ display:false } },
-          y:{ ticks:{ color:'#8b949e', font:{size:11}, callback: v => (v/1e6).toFixed(0)+'M' },
-              grid:{ color:'rgba(255,255,255,0.04)' }, beginAtZero:true }
-        }
-      }
-    });
+  const rvL=Object.keys(rvM).sort((a,b)=>rvM[b]-rvM[a]);
+  if(rvL.length){
+    set('revsub','Tổng giá trị theo nhân viên (triệu đồng)');
+    mkChart('crev','bar',
+      {labels:rvL.map(sn),datasets:[{label:'Doanh thu',data:rvL.map(k=>rvM[k]/1e6),backgroundColor:'rgba(59,126,255,.75)',borderColor:'#3b7eff',borderWidth:1,borderRadius:6}]},
+      {plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)} triệu`}}},scales:{x:{ticks:{color:'#5a6a8a',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#5a6a8a',font:{size:11},callback:v=>v+'M'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}
+    );
   } else {
-    document.getElementById('rev-sub').textContent = 'Chưa có dữ liệu đơn hàng trong file này';
-    const ctx = document.getElementById('c-revenue').getContext('2d');
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.font = '13px Be Vietnam Pro';
-    ctx.fillStyle = '#4b5563';
-    ctx.textAlign = 'center';
-    ctx.fillText('Không có dữ liệu doanh thu', ctx.canvas.width/2, 100);
+    set('revsub','Chưa có dữ liệu đơn hàng trong kỳ này');
+    destroyChart('crev');
   }
 
-  // ── Interaction table ──
-  const tbody = document.getElementById('inter-tbody');
-  tbody.innerHTML = '';
-  inter.slice().reverse().forEach((r, i) => {
-    const person  = (col(r,['người thực hiện','nhan vien']) || '').toString().trim();
-    const kh      = (col(r,['khách hàng','customer','ten kh']) || '').toString().trim();
-    const stage   = (col(r,['mối quan hệ','quan he','stage']) || '').toString().trim();
-    const time    = (col(r,['thời gian','time','ngay']) || '').toString().trim();
-    const content = (col(r,['nội dung','content','ghi chu']) || '').toString().trim();
-
-    const color = STAGE_COLORS[stage] || '#60a5fa';
-    const shortContent = content.length > 80 ? content.slice(0,80) + '…' : content;
-
-    tbody.innerHTML += `
-      <tr>
-        <td style="color:var(--muted);font-size:11px">${inter.length - i}</td>
-        <td><span style="font-weight:600">${shortName(person)}</span></td>
-        <td style="max-width:220px;font-size:12px">${kh}</td>
-        <td><span class="stage-pill" style="background:${color}22;color:${color};border:1px solid ${color}44">${stage||'—'}</span></td>
-        <td style="color:var(--muted);font-size:11px;white-space:nowrap">${time.split(' ')[0] || '—'}</td>
-        <td style="color:var(--muted);font-size:12px;max-width:260px">${shortContent}</td>
-      </tr>`;
+  // Interaction table
+  const ib=document.getElementById('itbody'); ib.innerHTML='';
+  [...iR].reverse().forEach((r,i)=>{
+    const p=sn(r[C.ip]||''), kh=(r[C.ik]||'').slice(0,45);
+    const stg=r[C.ist]||'', t=(r[C.it]||'').split(' ')[0];
+    const cnt=(r[C.ic]||'').slice(0,90), col=STAGE_CLR[stg]||'#8898b8';
+    ib.innerHTML+=`<tr>
+      <td style="color:var(--muted);font-size:11px">${iR.length-i}</td>
+      <td style="font-weight:600;white-space:nowrap">${p}</td>
+      <td style="font-size:12px;max-width:180px">${kh}</td>
+      <td><span class="pill" style="background:${col}22;color:${col};border:1px solid ${col}44">${stg||'—'}</span></td>
+      <td style="color:var(--muted);font-size:11px;white-space:nowrap">${t||'—'}</td>
+      <td style="color:var(--m2);font-size:12px;max-width:240px">${cnt}${cnt.length>=90?'…':''}</td>
+    </tr>`;
   });
-  document.getElementById('inter-count-badge').textContent = inter.length + ' bản ghi';
+  set('ibadge', iR.length+' bản ghi');
 
-  // ── New customers table ──
-  const newTbody = document.getElementById('new-tbody');
-  newTbody.innerHTML = '';
-  newCust.forEach((r, i) => {
-    const kh  = (col(r,['khách hàng','customer','ten']) || '').toString().trim();
-    let src   = (col(r,['nguồn','source','kenh']) || 'Khác').toString().trim();
-    src = src.replace(/^S\d+_\s*/,'');
-    newTbody.innerHTML += `
-      <tr>
-        <td style="color:var(--muted);font-size:11px">${i+1}</td>
-        <td style="font-weight:500">${kh}</td>
-        <td><span class="stage-pill" style="background:rgba(37,99,235,0.15);color:var(--accent2)">${src}</span></td>
-      </tr>`;
+  // New customers table
+  const nb=document.getElementById('ntbody'); nb.innerHTML='';
+  nR.forEach((r,i)=>{
+    const kh=r[C.nn]||'';
+    const src=(r[C.ns]||'Khác').replace(/^S\d+[_ ]*/,'').trim()||'Khác';
+    nb.innerHTML+=`<tr>
+      <td style="color:var(--muted);font-size:11px">${i+1}</td>
+      <td style="font-weight:500">${kh}</td>
+      <td><span class="pill" style="background:rgba(59,126,255,.12);color:#7eadff">${src}</span></td>
+    </tr>`;
   });
-  document.getElementById('new-count-badge').textContent = newCust.length + ' khách';
-
-  // Show dashboard
-  document.getElementById('upload-section').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
+  set('nbadge', nR.length+' khách');
 }
 
-function parseDate(v) {
-  if (!v) return null;
-  if (v instanceof Date) return v;
-  const s = v.toString().trim();
-  // dd/MM/yyyy or dd/MM/yyyy HH:mm
-  const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (m) return new Date(+m[3], +m[2]-1, +m[1]);
-  const d = new Date(s);
-  return isNaN(d) ? null : d;
+// ── CHART HELPERS ────────────────────────────────────────
+function mkChart(id,type,data,opts){
+  destroyChart(id);
+  charts[id]=new Chart(document.getElementById(id),{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});
 }
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
 
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+// ── AUTO REFRESH + COUNTDOWN ──────────────────────────────
+function startAuto(){ clearInterval(rfT); rfT=setInterval(loadAll,REFRESH_MS); startCd(); }
+function startCd(){ cdT=setInterval(()=>{cdsec--;if(cdsec<0)cdsec=300;const m=Math.floor(cdsec/60),s=String(cdsec%60).padStart(2,'0');set('cdtxt',`${m}:${s}`)},1000); }
+function resetCd(){ cdsec=300; }
+
+// ── UTILS ─────────────────────────────────────────────────
+function set(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; }
+function fmt(d){ return d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function parseVN(v){ if(!v)return null; const m=v.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m)return new Date(+m[3],+m[2]-1,+m[1]); const d=new Date(v); return isNaN(d)?null:d; }
+function sn(n){ return n.split(' ').slice(-2).join(' '); }
+function setSt(state,txt){
+  document.getElementById('sdot').className='dot'+(state!=='ok'?' '+state:'');
+  document.getElementById('stxt').textContent=txt;
 }
-
-function showError(msg) {
-  const t = document.getElementById('error-toast');
-  t.textContent = '⚠️ ' + msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 5000);
+function showErr(html){
+  document.getElementById('errmsg').innerHTML=html;
+  document.getElementById('errbox').style.display='block';
 }
-</script>
-<script>
-const GOOGLE_SHEETS_EXCEL_URL = '[https://docs.google.com/spreadsheets/d/](https://docs.google.com/spreadsheets/d/)1-IliiCImJcZxlCPlRfUU2tDS1r8tnkgO/export?format=xlsx';
-
-function autoLoadGoogleSheets() {
-  fetch(GOOGLE_SHEETS_EXCEL_URL)
-    .then(response => {
-      if (!response.ok) throw new Error('Kh�ng th? k?t n?i t?i Google Sheets');
-      return response.arrayBuffer();
-    })
-    .then(buffer => {
-      const fakeFile = {
-        name: "Google_Sheets_Live.xlsx"
-      };
-
-      const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
-      const data = parseSheets(wb);
-      renderDashboard(data, fakeFile.name);
-    })
-    .catch(err => {
-      console.error(err);
-    });
-}
-
-window.addEventListener('DOMContentLoaded', autoLoadGoogleSheets);
 </script>
 </body>
 </html>
