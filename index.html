@@ -144,6 +144,7 @@ footer a{color:var(--blue);text-decoration:none}
 </head>
 <body>
 
+<!-- ══ SETUP OVERLAY ══════════════════════════════════════════════ -->
 <div id="setup">
   <div class="setup-box">
     <div class="setup-title">Kết nối Google Sheets</div>
@@ -211,6 +212,7 @@ function out(data) {
   </div>
 </div>
 
+<!-- ══ HEADER ════════════════════════════════════════════════════ -->
 <header>
   <div class="logo">
     <div class="lm">TST</div>
@@ -224,6 +226,7 @@ function out(data) {
   </div>
 </header>
 
+<!-- ══ DASHBOARD ═════════════════════════════════════════════════ -->
 <main>
   <div id="errbox"><strong>⚠ Không thể tải dữ liệu</strong><span id="errmsg"></span></div>
 
@@ -281,7 +284,7 @@ function out(data) {
       <span class="pill" id="qbadge" style="background:rgba(255,92,124,.15);color:#ff5c7c;font-size:11px;font-weight:700">0</span>
     </div>
     <div class="twrap">
-      <table class="dtbl"><thead><tr><th style="width:50px">#</th><th style="width:120px">Người báo giá</th><th style="width:200px">Khách hàng</th><th style="width:150px">Giá trị báo giá</th><th>Sản phẩm / Ghi chú</th></tr></thead></table>
+      <table class="dtbl"><thead><tr><th style="width:50px">#</th><th style="width:150px">Người báo giá</th><th style="width:220px">Khách hàng</th><th style="width:150px">Giá trị báo giá</th><th>Sản phẩm / Ghi chú</th></tr></thead></table>
       <div class="sb"><table class="dtbl"><tbody id="qtbody"></tbody></table></div>
     </div>
   </div>
@@ -345,7 +348,7 @@ function connect(){
   startAuto();
 }
 
-// Hàm tìm dữ liệu cột thông minh: Tự quét chuỗi và xử lý khoảng trắng/font chữ ẩn từ đám mây
+// Hàm tìm dữ liệu cột thông minh: Tự động loại bỏ dấu, ký tự lạ để đối chiếu
 function col(row, candidates) {
   for (const k of Object.keys(row)) {
     const cleanKey = k.toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
@@ -412,15 +415,15 @@ async function fetchSheet(name){
 
 // ── RENDER ───────────────────────────────────────────────
 function render(nR, iR, rvR, qR){
-  // Tự động phân tích và bóc tách dữ liệu cột thông minh theo từ khóa
   const stages  = iR.map(r => (col(r, ['mối quan hệ', 'quan he', 'stage']).toString()).trim());
   const persons = iR.map(r => (col(r, ['người thực hiện', 'nhan vien', 'staff', 'người']).toString()).trim());
   const closed  = stages.filter(s=>s==='Chốt').length;
   const uStaff  = new Set(persons.filter(Boolean)).size;
 
+  // Tính tổng giá trị báo giá dựa trên các bộ từ khóa linh hoạt
   let totalQuoteVal = 0;
   qR.forEach(r => {
-    const v = parseFloat((col(r, ['giá trị báo giá', 'gia tri', 'value', 'amount']) || '0').toString().replace(/[^0-9.]/g,'')) || 0;
+    const v = parseFloat((col(r, ['giá trị báo giá', 'giá trị', 'giatri', 'tổng tiền', 'tong tien', 'value', 'amount']) || '0').toString().replace(/[^0-9.]/g,'')) || 0;
     totalQuoteVal += v;
   });
 
@@ -432,7 +435,7 @@ function render(nR, iR, rvR, qR){
   set('kq_', totalQuoteVal > 0 ? (totalQuoteVal/1e6).toFixed(1) : '0');
 
   // Period
-  const times=iR.map(r=>parseVN(col(r, ['thời gian thực hiện', 'thời gian', 'ngành', 'date']))).filter(Boolean).sort((a,b)=>a-b);
+  const times=iR.map(r=>parseVN(col(r, ['thời gian thực hiện', 'thời gian', 'ngày', 'date']))).filter(Boolean).sort((a,b)=>a-b);
   if(times.length){
     const fd=d=>d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
     set('pbadge', fd(times[0])+' – '+fd(times[times.length-1]));
@@ -441,7 +444,7 @@ function render(nR, iR, rvR, qR){
   // Source doughnut
   const srcMap={};
   nR.forEach(r=>{
-    let s=(col(r, ['nguồn khách hàng', 'nguồn', 'source']) || 'Khác').replace(/^S\d+[_ ]*/,'').trim()||'Khác';
+    let s=(col(r, ['nguồn khách hàng', 'nguồn', 'source', 'kênh']) || 'Khác').replace(/^S\d+[_ ]*/,'').trim()||'Khác';
     srcMap[s]=(srcMap[s]||0)+1;
   });
   const sl=Object.keys(srcMap);
@@ -512,11 +515,9 @@ function render(nR, iR, rvR, qR){
   const ib=document.getElementById('itbody'); ib.innerHTML='';
   [...iR].reverse().forEach((r,i)=>{
     const p=sn(col(r, ['người thực hiện', 'nhan vien', 'staff']));
-    const kh=(col(r, ['khách hàng', 'customer', 'ten kh']) || '').slice(0,45);
+    const kh=(col(r, ['khách hàng', 'customer', 'tên kh']) || '').slice(0,45);
     const stg=col(r, ['mối quan hệ', 'quan he', 'stage']);
     const t=(col(r, ['thời gian thực hiện', 'thời gian', 'ngày', 'date']) || '').split(' ')[0];
-    
-    // Tự động quét thông minh cột Nội dung (Chấp nhận: Nội dung tương tác, Nội dung, Nội dung trao đổi)
     const cnt=(col(r, ['nội dung']) || '').slice(0,90);
     const colClr=STAGE_CLR[stg]||'#8898b8';
     
@@ -531,18 +532,18 @@ function render(nR, iR, rvR, qR){
   });
   set('ibadge', iR.length+' bản ghi');
 
-  // Render Quote Table
+  // Render Quote Table (Được nâng cấp bộ lọc quét thông minh đa từ khóa)
   const qb=document.getElementById('qtbody'); qb.innerHTML='';
   [...qR].reverse().forEach((r,i)=>{
-    const p=sn(col(r, ['người báo giá', 'nhân viên', 'staff']));
-    const kh=(col(r, ['khách hàng', 'customer']) || '').slice(0,45);
-    const val=parseFloat((col(r, ['giá trị báo giá', 'giá trị', 'value']) || '0').toString().replace(/[^0-9.]/g,'')) || 0;
-    const cnt=col(r, ['sản phẩm', 'ghi chú', 'nội dung'])||'—';
+    const p=sn(col(r, ['người báo giá', 'người tạo', 'nhân viên', 'staff', 'sale']));
+    const kh=(col(r, ['khách hàng', 'tên kh', 'customer']) || '').slice(0,45);
+    const val=parseFloat((col(r, ['giá trị báo giá', 'giá trị', 'giatri', 'tổng tiền', 'tong tien', 'value', 'amount']) || '0').toString().replace(/[^0-9.]/g,'')) || 0;
+    const cnt=col(r, ['sản phẩm', 'ghi chú', 'nội dung', 'tên xe', 'mô tả'])||'—';
     
     qb.innerHTML+=`<tr>
       <td style="color:var(--muted);font-size:11px;width:50px">${qR.length-i}</td>
-      <td style="font-weight:600;white-space:nowrap;width:120px">${p}</td>
-      <td style="font-size:12px;max-width:180px;width:200px;word-break:break-all">${kh}</td>
+      <td style="font-weight:600;white-space:nowrap;width:150px">${p || 'Ẩn danh'}</td>
+      <td style="font-size:12px;max-width:180px;width:220px;word-break:break-all">${kh || '—'}</td>
       <td style="width:150px;color:var(--amber);font-weight:600">${val > 0 ? val.toLocaleString('vi-VN') + ' đ' : '—'}</td>
       <td style="color:var(--m2);font-size:12px;word-break:break-all">${cnt}</td>
     </tr>`;
@@ -552,8 +553,8 @@ function render(nR, iR, rvR, qR){
   // New customers table
   const nb=document.getElementById('ntbody'); nb.innerHTML='';
   nR.forEach((r,i)=>{
-    const kh=col(r, ['khách hàng', 'tên khách hàng']);
-    const src=(col(r, ['nguồn khách hàng', 'nguồn', 'source']) || 'Khác').replace(/^S\d+[_ ]*/,'').trim()||'Khác';
+    const kh=col(r, ['khách hàng', 'tên khách hàng', 'customer']);
+    const src=(col(r, ['nguồn khách hàng', 'nguồn', 'source', 'kênh']) || 'Khác').replace(/^S\d+[_ ]*/,'').trim()||'Khác';
     nb.innerHTML+=`<tr>
       <td style="color:var(--muted);font-size:11px;width:50px">${i+1}</td>
       <td style="font-weight:500">${kh}</td>
@@ -568,7 +569,7 @@ function mkChart(id,type,data,opts){
   destroyChart(id);
   charts[id]=new Chart(document.getElementById(id),{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});
 }
-function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
+function delete charts[id];}}
 
 // ── AUTO REFRESH + COUNTDOWN ──────────────────────────────
 function startAuto(){ clearInterval(rfT); rfT=setInterval(loadAll,REFRESH_MS); startCd(); }
