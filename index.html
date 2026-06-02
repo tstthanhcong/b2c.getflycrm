@@ -52,7 +52,7 @@ main{max-width:1380px;margin:0 auto;padding:22px 20px 60px}
 .kg{position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;filter:blur(28px);opacity:.3;pointer-events:none}
 .ki{font-size:18px;margin-bottom:8px;display:block}
 .kl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:6px}
-.kv{font-family:var(--fh);font-size:28px;font-weight:800;line-height:1;margin-bottom:4px;white-space:nowrap}
+.kv{font-family:var(--fh);font-size:26px;font-weight:800;line-height:1;margin-bottom:4px;white-space:nowrap}
 .ks{font-size:11px;color:var(--muted)}
 .kb .kv{color:var(--blue)} .kb .kg{background:var(--blue)}
 .kc .kv{color:var(--cyan)} .kc .kg{background:var(--cyan)}
@@ -103,7 +103,7 @@ footer a{color:var(--blue);text-decoration:none}
 .kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.1s}.kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.2s}.kpi:nth-child(5){animation-delay:.25s}.kpi:nth-child(6){animation-delay:.3s}
 .card{animation:fadeUp .45s ease .15s backwards}
 
-@media(max-width:1200px){
+@media(max-width:1250px){
   .kpis{grid-template-columns:repeat(3,1fr)}
 }
 @media(max-width:960px){
@@ -169,6 +169,15 @@ footer a{color:var(--blue);text-decoration:none}
       <div class="ch"><div><div class="ct">Phân bổ giai đoạn</div><div class="cs">Tỷ lệ % mối quan hệ</div></div></div>
       <div class="cw"><canvas id="cstage"></canvas></div>
     </div>
+    
+    <div class="card">
+      <div class="ch"><div><div class="ct">Cơ cấu Ngành nghề</div><div class="cs">Tỷ lệ phân bổ theo lĩnh vực khách hàng</div></div></div>
+      <div class="cw"><canvas id="cindustry"></canvas></div>
+    </div>
+    <div class="card s2">
+      <div class="ch"><div><div class="ct">Phân bổ Tỉnh thành</div><div class="cs">Địa bàn tập trung khách hàng (Số lượng KH)</div></div></div>
+      <div class="cw md"><canvas id="cprovince"></canvas></div>
+    </div>
   </div>
 
   <div class="card" style="margin-bottom:14px">
@@ -216,15 +225,13 @@ footer a{color:var(--blue);text-decoration:none}
 // ════════════════════════════════════════════════════════
 //  CONFIG
 // ════════════════════════════════════════════════════════
-const STORE_KEY   = 'tst_gas_url';
 const REFRESH_MS  = 5 * 60 * 1000;
-
 const STAGE_ORDER = ['Mới','Tiếp cận','Có Nhu Cầu','Tiềm năng','Chốt'];
 const STAGE_CLR   = {
   'Mới':'#3b7eff','Tiếp cận':'#facc15',
   'Có Nhu Cầu':'#00e5a0','Tiềm năng':'#fb923c','Chốt':'#a259ff'
 };
-const PAL = ['#3b7eff','#00d4ff','#00e5a0','#ffb020','#a259ff','#ff5c7c','#06b6d4'];
+const PAL = ['#3b7eff','#00d4ff','#00e5a0','#ffb020','#a259ff','#ff5c7c','#06b6d4','#10b981','#f59e0b'];
 
 let charts={}, cdsec=300, cdT, rfT, GAS_URL='';
 
@@ -235,7 +242,7 @@ let charts={}, cdsec=300, cdT, rfT, GAS_URL='';
   startAuto();
 })();
 
-// Hàm quét dữ liệu cột siêu cấp: Loại bỏ triệt để ký tự rác Unicode, né cột Mã (ID) và tìm ô chứa dữ liệu thực tế
+// Hàm tìm dữ liệu cột siêu cấp thông minh (Bỏ qua ký tự Unicode ẩn, khoảng trắng và phân biệt Mã/Tên)
 function col(row, candidates, avoidMatches = []) {
   if (!row) return '';
   let fallbackValue = '';
@@ -258,38 +265,45 @@ async function loadAll(){
   document.getElementById('rbtn').classList.add('spin');
   document.getElementById('errbox').style.display='none';
 
+  // Cơ chế bắt lỗi độc lập: Nếu thiếu hoặc sai tên 1 tab, dashboard vẫn hoạt động bình thường
+  const fetchSafe = async (name) => {
+    try {
+      const url = GAS_URL + '?sheet=' + encodeURIComponent(name);
+      const res = await fetch(url);
+      if(!res.ok) return [];
+      const json = await res.json();
+      if(json.error) return [];
+      return json.rows || [];
+    } catch(e) {
+      console.warn('Không tải được tab: ' + name, e);
+      return [];
+    }
+  };
+
   try{
-    const [newRows,interRows,orderRows,revRows,quoteRows] = await Promise.all([
-      fetchSheet('Khách hàng mới'),
-      fetchSheet('Tương tác'),
-      fetchSheet('Đơn hàng'),
-      fetchSheet('Doanh thu'),
-      fetchSheet('Báo giá')
+    const [newRows, interRows, orderRows, revRows, quoteRows, custInfoRows] = await Promise.all([
+      fetchSafe('Khách hàng mới'),
+      fetchSafe('Tương tác'),
+      fetchSafe('Đơn hàng'),
+      fetchSafe('Doanh thu'),
+      fetchSafe('Báo giá'),
+      fetchSafe('Thông tin khách hàng')
     ]);
-    render(newRows, interRows, [...orderRows,...revRows], quoteRows);
+    render(newRows, interRows, [...orderRows, ...revRows], quoteRows, custInfoRows);
     const t=new Date();
     setSt('ok','Cập nhật '+fmt(t));
     set('upd', fmt(t));
     resetCd();
   }catch(e){
-    setSt('err','Lỗi tải dữ liệu');
-    showErr(e.message + '<br><br>Kiểm tra Apps Script trên Google Sheets.');
+    setSt('err','Lỗi cấu trúc');
+    showErr(e.message);
   }finally{
     document.getElementById('rbtn').classList.remove('spin');
   }
 }
 
-async function fetchSheet(name){
-  const url = GAS_URL + '?sheet=' + encodeURIComponent(name);
-  const res  = await fetch(url);
-  if(!res.ok) throw new Error('HTTP ' + res.status + ' khi gọi ' + name);
-  const json = await res.json();
-  if(json.error) throw new Error(json.error);
-  return json.rows || [];
-}
-
 // ── RENDER ───────────────────────────────────────────────
-function render(nR, iR, rvR, qR){
+function render(nR, iR, rvR, qR, cIR){
   const stages  = iR.map(r => col(r, ['mối quan hệ', 'quan he', 'stage']));
   const persons = iR.map(r => col(r, ['người thực hiện', 'nhan vien', 'staff', 'người']));
   const closed  = stages.filter(s=>s==='Chốt').length;
@@ -349,7 +363,6 @@ function render(nR, iR, rvR, qR){
   const stM={};
   persons.forEach(p=>{if(p) stM[p]=(stM[p]||0)+1});
   const stL=Object.keys(stM).sort((a,b)=>stM[b]-stM[a]);
-  
   const sn = n => {
     if (!n) return 'Ẩn danh';
     const words = n.toString().trim().split(' ');
@@ -387,6 +400,36 @@ function render(nR, iR, rvR, qR){
     destroyChart('crev');
   }
 
+  // ── XỬ LÝ DỮ LIỆU CHÂN DUNG KHÁCH HÀNG (MỚI) ──
+  const indMap = {};
+  const provMap = {};
+  if (cIR && cIR.length) {
+    cIR.forEach(r => {
+      let ind = col(r, ['ngành nghề', 'ngành', 'industry', 'lĩnh vực']).trim() || 'Chưa xác định';
+      let prov = col(r, ['tỉnh thành', 'tỉnh', 'thành phố', 'province', 'city', 'địa bàn']).trim() || 'Chưa xác định';
+      indMap[ind] = (indMap[ind] || 0) + 1;
+      provMap[prov] = (provMap[prov] || 0) + 1;
+    });
+  }
+
+  // Biểu đồ cấu cơ ngành nghề (Doughnut)
+  const indLabels = Object.keys(indMap).sort((a,b) => indMap[b] - indMap[a]);
+  if (indLabels.length) {
+    mkChart('cindustry', 'doughnut',
+      {labels: indLabels, datasets: [{data: indLabels.map(k => indMap[k]), backgroundColor: PAL.slice(0, indLabels.length), borderColor: '#0e1425', borderWidth: 3, hoverOffset: 6}]},
+      {cutout: '58%', plugins: {legend: {position: 'right', labels: {color: '#8898b8', font: {family: 'DM Sans', size: 10}, padding: 10, boxWidth: 10}}, tooltip: {callbacks: {label: ctx => ` ${ctx.label}: ${ctx.raw} KH`}}}}
+    );
+  }
+
+  // Biểu đồ cột ngang phân bổ Tỉnh thành
+  const provLabels = Object.keys(provMap).sort((a,b) => provMap[b] - provMap[a]);
+  if (provLabels.length) {
+    mkChart('cprovince', 'bar',
+      {labels: provLabels, datasets: [{label: 'Số lượng KH', data: provLabels.map(k => provMap[k]), backgroundColor: 'rgba(0, 229, 160, 0.75)', borderColor: '#00e5a0', borderWidth: 1, borderRadius: 5}]},
+      {indexAxis: 'y', plugins: {legend: {display: false}, tooltip: {callbacks: {label: ctx => ` ${ctx.raw} khách hàng`}}}, scales: {x: {ticks: {color: '#5a6a8a', font: {size: 11}}, grid: {color: 'rgba(255,255,255,0.04)'}, beginAtZero: true}, y: {ticks: {color: '#5a6a8a', font: {size: 11}}, grid: {display: false}}}}
+    );
+  }
+
   // Interaction table
   const ib=document.getElementById('itbody'); ib.innerHTML='';
   [...iR].reverse().forEach((r,i)=>{
@@ -394,9 +437,7 @@ function render(nR, iR, rvR, qR){
     const kh=col(r, ['tên khách hàng', 'tên công ty', 'khách hàng', 'customer', 'tên kh'], ['mã', 'id', 'code']);
     const stg=col(r, ['mối quan hệ', 'quan he', 'stage']);
     const t=col(r, ['thời gian thực hiện', 'thời gian', 'ngày', 'date']).split(' ')[0];
-    
-    // Quét sâu rộng các biến thể cột nội dung để tránh ô trống
-    const cnt=col(r, ['nội dung tương tác', 'nội dung trao đổi', 'nội dung', 'trao đổi', 'ghi chú', 'mô tả', 'chi tiết hoạt động']);
+    const cnt=col(r, ['nội dung tương tác', 'nội dung trao đổi', 'nội dung', 'trao đổi', 'ghi chú', 'mô tả']);
     const colClr=STAGE_CLR[stg]||'#8898b8';
     
     ib.innerHTML+=`<tr>
@@ -405,7 +446,7 @@ function render(nR, iR, rvR, qR){
       <td style="font-size:12px;max-width:180px;width:180px;word-break:break-all;color:var(--cyan);font-weight:500">${kh || 'Chưa rõ tên'}</td>
       <td style="width:120px"><span class="pill" style="background:${colClr}22;color:${colClr};border:1px solid ${colClr}44">${stg||'—'}</span></td>
       <td style="color:var(--muted);font-size:11px;white-space:nowrap;width:110px">${t||'—'}</td>
-      <td style="color:var(--m2);font-size:12px;max-width:240px;word-break:break-all">${cnt ? cnt.slice(0,90) + (cnt.length&&cnt.length>=90?'…':'') : '—'}</td>
+      <td style="color:var(--m2);font-size:12px;max-width:240px;word-break:break-all">${cnt ? cnt.slice(0,90) + (cnt.length>=90?'…':'') : '—'}</td>
     </tr>`;
   });
   set('ibadge', iR.length+' bản ghi');
@@ -448,9 +489,7 @@ function render(nR, iR, rvR, qR){
 function mkChart(id,type,data,opts){
   destroyChart(id);
   const ctx = document.getElementById(id);
-  if(ctx) {
-    charts[id]=new Chart(ctx,{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});
-  }
+  if(ctx) { charts[id]=new Chart(ctx,{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}}); }
 }
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
@@ -463,6 +502,7 @@ function resetCd(){ cdsec=300; }
 function set(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; }
 function fmt(d){ return d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 function parseVN(v){ if(!v)return null; const m=v.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m)return new Date(+m[3],+m[2]-1,+m[1]); const d=new Date(v); return isNaN(d)?null:d; }
+function showErr(html){ document.getElementById('errmsg').innerHTML=html; document.getElementById('errbox').style.display='block'; }
 </script>
 </body>
 </html>
