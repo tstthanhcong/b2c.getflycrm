@@ -20,7 +20,7 @@
 body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 
 /* ─ SETUP OVERLAY ─ */
-#setup{position:fixed;inset:0;z-index:200;background:rgba(8,12,24,.97);backdrop-filter:blur(12px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+#setup{display:none!important}
 #setup.gone{display:none}
 .setup-box{max-width:600px;width:100%}
 .setup-title{font-family:var(--fh);font-size:28px;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,var(--text) 40%,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -319,8 +319,10 @@ let charts={}, cdsec=300, cdT, rfT, GAS_URL='';
 
 // ── BOOT ────────────────────────────────────────────────
 (function(){
-  const saved = localStorage.getItem(STORE_KEY);
-  if(saved){ GAS_URL=saved; hideSetup(); loadAll(); startAuto(); }
+  GAS_URL = 'https://script.google.com/macros/s/AKfycbx6IsPXEirHC-9ouaIL6vFFGXjmFlzcb_y3db1NbDjzjR8QcT9OTvwunTx9LOEpMI5NZw/exec';
+  hideSetup();
+  loadAll();
+  startAuto();
 })();
 
 // ── SETUP ────────────────────────────────────────────────
