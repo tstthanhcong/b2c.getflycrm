@@ -71,19 +71,20 @@ main{max-width:1380px;margin:0 auto;padding:22px 20px 60px}
 .pbadge{background:rgba(59,126,255,.12);border:1px solid rgba(59,126,255,.25);color:#7eadff;border-radius:20px;padding:4px 14px;font-size:11.5px;font-weight:600}
 
 /* KPIs */
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:18px 16px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;cursor:default}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:16px 14px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;cursor:default}
 .kpi:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.12)}
 .kg{position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;filter:blur(28px);opacity:.3;pointer-events:none}
-.ki{font-size:20px;margin-bottom:10px;display:block}
-.kl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:6px}
-.kv{font-family:var(--fh);font-size:34px;font-weight:800;line-height:1;margin-bottom:4px}
+.ki{font-size:18px;margin-bottom:8px;display:block}
+.kl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:6px}
+.kv{font-family:var(--fh);font-size:28px;font-weight:800;line-height:1;margin-bottom:4px;white-space:nowrap}
 .ks{font-size:11px;color:var(--muted)}
 .kb .kv{color:var(--blue)} .kb .kg{background:var(--blue)}
 .kc .kv{color:var(--cyan)} .kc .kg{background:var(--cyan)}
 .kgr .kv{color:var(--green)} .kgr .kg{background:var(--green)}
 .kam .kv{color:var(--amber)} .kam .kg{background:var(--amber)}
 .kvi .kv{color:var(--violet)} .kvi .kg{background:var(--violet)}
+.krs .kv{color:var(--rose)} .krs .kg{background:var(--rose)}
 
 /* CHART GRID */
 .cgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
@@ -124,11 +125,13 @@ footer a{color:var(--blue);text-decoration:none}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .kpi{animation:fadeUp .45s ease backwards}
-.kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.1s}.kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.2s}.kpi:nth-child(5){animation-delay:.25s}
+.kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.1s}.kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.2s}.kpi:nth-child(5){animation-delay:.25s}.kpi:nth-child(6){animation-delay:.3s}
 .card{animation:fadeUp .45s ease .15s backwards}
 
-@media(max-width:960px){
+@media(max-width:1200px){
   .kpis{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:960px){
   .cgrid{grid-template-columns:1fr 1fr} .s2{grid-column:span 2}
 }
 @media(max-width:640px){
@@ -238,6 +241,7 @@ function out(data) {
     <div class="kpi kgr"><div class="kg"></div><span class="ki">✅</span><div class="kl">Đã chốt</div><div class="kv" id="kc">—</div><div class="ks">khách hàng</div></div>
     <div class="kpi kam"><div class="kg"></div><span class="ki">📈</span><div class="kl">Tỷ lệ chuyển đổi</div><div class="kv" id="kr">—</div><div class="ks">chốt / KH mới</div></div>
     <div class="kpi kvi"><div class="kg"></div><span class="ki">👥</span><div class="kl">Nhân viên sale</div><div class="kv" id="ks_">—</div><div class="ks">đang hoạt động</div></div>
+    <div class="kpi krs"><div class="kg"></div><span class="ki">💰</span><div class="kl">Tổng giá trị báo giá</div><div class="kv" id="kq_">—</div><div class="ks">triệu đồng</div></div>
   </div>
 
   <div class="cgrid">
@@ -274,6 +278,17 @@ function out(data) {
     </div>
   </div>
 
+  <div class="card" style="margin-bottom:14px">
+    <div class="ch">
+      <div><div class="ct">💵 Chi tiết báo giá</div><div class="cs">Danh sách báo giá đã gửi khách hàng</div></div>
+      <span class="pill" id="qbadge" style="background:rgba(255,92,124,.15);color:#ff5c7c;font-size:11px;font-weight:700">0</span>
+    </div>
+    <div class="twrap">
+      <table class="dtbl"><thead><tr><th style="width:50px">#</th><th style="width:120px">Người báo giá</th><th style="width:200px">Khách hàng</th><th style="width:150px">Giá trị báo giá</th><th>Sản phẩm / Ghi chú</th></tr></thead></table>
+      <div class="sb"><table class="dtbl"><tbody id="qtbody"></tbody></table></div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="ch">
       <div><div class="ct">🆕 Khách hàng mới</div><div class="cs">Danh sách trong kỳ</div></div>
@@ -307,7 +322,6 @@ const STAGE_CLR   = {
 };
 const PAL = ['#3b7eff','#00d4ff','#00e5a0','#ffb020','#a259ff','#ff5c7c','#06b6d4'];
 
-// ĐÃ SỬA: Đồng bộ chuẩn từ khóa tiếng Việt có dấu khớp 100% với Google Sheets xuất từ Getfly
 const C = {
   nn: 'Khách hàng', 
   ns: 'Nguồn khách hàng',
@@ -318,6 +332,11 @@ const C = {
   ic: 'Nội dung tương tác',
   rv: 'Giá trị', 
   rp: 'Người thực hiện',
+  // Cột định dạng dành riêng cho tab Báo giá
+  qp: 'Người báo giá',
+  qk: 'Khách hàng',
+  qv: 'Giá trị báo giá',
+  qc: 'Sản phẩm'
 };
 
 let charts={}, cdsec=300, cdT, rfT, GAS_URL='';
@@ -373,13 +392,14 @@ async function loadAll(){
   document.getElementById('errbox').style.display='none';
 
   try{
-    const [newRows,interRows,orderRows,revRows] = await Promise.all([
+    const [newRows,interRows,orderRows,revRows,quoteRows] = await Promise.all([
       fetchSheet('Khách hàng mới'),
       fetchSheet('Tương tác'),
       fetchSheet('Đơn hàng'),
       fetchSheet('Doanh thu'),
+      fetchSheet('Báo giá') // Tự động load thêm tab Báo giá mới
     ]);
-    render(newRows, interRows, [...orderRows,...revRows]);
+    render(newRows, interRows, [...orderRows,...revRows], quoteRows);
     const t=new Date();
     setSt('ok','Cập nhật '+fmt(t));
     set('upd', fmt(t));
@@ -402,17 +422,25 @@ async function fetchSheet(name){
 }
 
 // ── RENDER ───────────────────────────────────────────────
-function render(nR, iR, rvR){
+function render(nR, iR, rvR, qR){
   const stages  = iR.map(r=>(r[C.ist]||'').trim());
   const persons = iR.map(r=>(r[C.ip]||'').trim());
   const closed  = stages.filter(s=>s==='Chốt').length;
   const uStaff  = new Set(persons.filter(Boolean)).size;
+
+  // Tính toán tổng tiền báo giá
+  let totalQuoteVal = 0;
+  qR.forEach(r => {
+    const v = parseFloat((r[C.qv]||'0').toString().replace(/[^0-9.]/g,'')) || 0;
+    totalQuoteVal += v;
+  });
 
   set('kn', nR.length);
   set('ki', iR.length);
   set('kc', closed);
   set('kr', nR.length ? Math.round(closed/nR.length*100)+'%' : '—');
   set('ks_', uStaff);
+  set('kq_', totalQuoteVal > 0 ? (totalQuoteVal/1e6).toFixed(1) : '0');
 
   // Period
   const times=iR.map(r=>parseVN(r[C.it])).filter(Boolean).sort((a,b)=>a-b);
@@ -454,7 +482,6 @@ function render(nR, iR, rvR){
   persons.forEach(p=>{if(p) stM[p]=(stM[p]||0)+1});
   const stL=Object.keys(stM).sort((a,b)=>stM[b]-stM[a]);
   
-  // ĐÃ SỬA: Hàm cắt ngắn tên an toàn, không lo lỗi font
   const sn = n => {
     if (!n) return 'Ẩn danh';
     const words = n.toString().trim().split(' ');
@@ -499,7 +526,6 @@ function render(nR, iR, rvR){
     const stg=r[C.ist]||'', t=(r[C.it]||'').split(' ')[0];
     const cnt=(r[C.ic]||'').slice(0,90), col=STAGE_CLR[stg]||'#8898b8';
     
-    // ĐÃ SỬA: Đồng bộ hóa layout table cố định width cho đúng cột dữ liệu không bị lệch hàng ngang
     ib.innerHTML+=`<tr>
       <td style="color:var(--muted);font-size:11px;width:50px">${iR.length-i}</td>
       <td style="font-weight:600;white-space:nowrap;width:120px">${p}</td>
@@ -510,6 +536,23 @@ function render(nR, iR, rvR){
     </tr>`;
   });
   set('ibadge', iR.length+' bản ghi');
+
+  // Render Quote Table
+  const qb=document.getElementById('qtbody'); qb.innerHTML='';
+  [...qR].reverse().forEach((r,i)=>{
+    const p=sn(r[C.qp]||''), kh=(r[C.qk]||'').slice(0,45);
+    const val=parseFloat((r[C.qv]||'0').toString().replace(/[^0-9.]/g,'')) || 0;
+    const cnt=r[C.qc]||'—';
+    
+    qb.innerHTML+=`<tr>
+      <td style="color:var(--muted);font-size:11px;width:50px">${qR.length-i}</td>
+      <td style="font-weight:600;white-space:nowrap;width:120px">${p}</td>
+      <td style="font-size:12px;max-width:180px;width:200px;word-break:break-all">${kh}</td>
+      <td style="width:150px;color:var(--amber);font-weight:600">${val > 0 ? val.toLocaleString('vi-VN') + ' đ' : '—'}</td>
+      <td style="color:var(--m2);font-size:12px;word-break:break-all">${cnt}</td>
+    </tr>`;
+  });
+  set('qbadge', qR.length+' bản ghi');
 
   // New customers table
   const nb=document.getElementById('ntbody'); nb.innerHTML='';
