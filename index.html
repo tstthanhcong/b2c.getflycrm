@@ -263,7 +263,7 @@ let charts={}, cdsec=300, cdT, rfT, GAS_URL='';
   startAuto();
 })();
 
-// Hàm tìm dữ liệu cột thông minh: Khắc phục lỗi lọc text/số và khoảng trắng ẩn
+// Hàm tìm dữ liệu cột thông minh: Tự động loại bỏ dấu, ký tự ẩn và xử lý text/số
 function col(row, candidates) {
   if (!row) return '';
   for (const k of Object.keys(row)) {
@@ -360,11 +360,11 @@ function render(nR, iR, rvR, qR){
   const maxV=Math.max(...Object.values(stgMap),1);
   const fc=document.getElementById('funnel'); fc.innerHTML='';
   STAGE_ORDER.forEach(stg=>{
-    const cnt=stgMap[stg]||0, pct=Math.round(cnt/maxV*100), col=STAGE_CLR[stg];
+    const cnt=stgMap[stg]||0, pct=Math.round(cnt/maxV*100), colClr=STAGE_CLR[stg];
     fc.innerHTML+=`<div class="fr">
       <div class="fl">${stg}</div>
-      <div class="ft"><div class="fb" style="width:0%;background:${col}" data-w="${pct}%">${cnt||''}</div></div>
-      <div class="fc" style="color:${col}">${cnt}</div></div>`;
+      <div class="ft"><div class="fb" style="width:0%;background:${colClr}" data-w="${pct}%">${cnt||''}</div></div>
+      <div class="fc" style="color:${colClr}">${cnt}</div></div>`;
   });
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     fc.querySelectorAll('.fb').forEach(b=>b.style.width=b.dataset.w);
@@ -383,7 +383,7 @@ function render(nR, iR, rvR, qR){
 
   mkChart('cstaff','bar',
     {labels:stL.map(sn),datasets:[{label:'Tương tác',data:stL.map(k=>stM[k]),backgroundColor:PAL.slice(0,stL.length),borderRadius:6,borderSkipped:false}]},
-    {plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} tương tác`}}},scales:{x:{ticks:{color:'#5a6a8a',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#5a6a8a',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}
+    {plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} tương tác`}}},scales:{x:{ticks:{color:'#5a6a8a',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#5a6a8a',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}}}
   );
 
   // Stage doughnut
@@ -404,8 +404,8 @@ function render(nR, iR, rvR, qR){
   if(rvL.length){
     set('revsub','Tổng giá trị theo nhân viên (triệu đồng)');
     mkChart('crev','bar',
-      {labels:rvL.map(sn),datasets:[{label:'Doanh thu',data:rvL.map(k=>rvM[k]/1e6),backgroundColor:'rgba(59,126,255,.75)',borderColor:#3b7eff,borderWidth:1,borderRadius:6}]},
-      {plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)} triệu`}}},scales:{x:{ticks:{color:'#5a6a8a',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#5a6a8a',font:{size:11},callback:v=>v+'M'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}
+      {labels:rvL.map(sn),datasets:[{label:'Doanh thu',data:rvL.map(k=>rvM[k]/1e6),backgroundColor:'rgba(59,126,255,0.75)',borderColor:'#3b7eff',borderWidth:1,borderRadius:6}]},
+      {plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)} triệu`}}},scales:{x:{ticks:{color:'#5a6a8a',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#5a6a8a',font:{size:11},callback:v=>v+'M'},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}}}
     );
   } else {
     set('revsub','Chưa có dữ liệu đơn hàng trong kỳ này');
@@ -470,6 +470,7 @@ function mkChart(id,type,data,opts){
   destroyChart(id);
   charts[id]=new Chart(document.getElementById(id),{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});
 }
+// Đã sửa cú pháp đóng biểu đồ chuẩn JavaScript
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 // ── AUTO REFRESH + COUNTDOWN ──────────────────────────────
