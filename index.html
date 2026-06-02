@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TST · CRM Dashboard</title>
+<!-- Gi? th? vi?n c? n?u mu?n upload th? công d? phòng, b? sung PapaParse ?? ??c Google Sheets -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1e2632;
+    --border: #2a3441;
+    --accent: #2563eb;
+    --accent2: #0ea5e9;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --card-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ?? TOP BAR ?? */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-badge {
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .logo-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--text);
+  }
+
+  #week-label {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  /* ?? LOADING SCREEN ?? */
+  #loading-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 58px);
+    padding: 40px;
+    gap: 16px;
+  }
+
+  .loader {
+    border: 4px solid var(--surface2);
+    border-top: 4px solid var(--accent);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* ?? DASHBOARD ?? */
+  #dashboard { display: none; padding: 24px 28px 40px; }
+
+  /* KPI Strip */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+
+  .kpi:hover { transform: translateY(-2px); }
+
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .kpi.blue::before   { background: var(--accent); }
+  .kpi.cyan::before   { background: var(--accent2); }
+  .kpi.green::before  { background: var(--green); }
+  .kpi.orange::before { background: var(--orange); }
+  .kpi.purple::before { background: var(--purple); }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .kpi.blue   .kpi-value { color: var(--accent2); }
+  .kpi.cyan   .kpi-value { color: #38bdf8; }
+  .kpi.green  .kpi-value { color: var(--green); }
+  .kpi.orange .kpi-value { color: var(--orange); }
+  .kpi.purple .kpi-value { color: #a78bfa; }
+
+  .kpi-sub { font-size: 11px; color: var(--muted); }
+
+  /* Charts Grid */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+  }
+
+  .chart-card.wide { grid-column: span 2; }
+  .chart-card.full { grid-column: span 3; }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+
+  .chart-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text);
+  }
+
+  .chart-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .chart-canvas-wrap { position: relative; height: 220px; }
+  .chart-canvas-wrap.tall { height: 260px; }
+
+  /* Table */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    margin-top: 16px;
+  }
+
+  .table-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .table-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+  thead th {
+    background: var(--surface2);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr { border-bottom: 1px solid rgba(42,52,65,0.5); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.025); }
+  td { padding: 10px 16px; color: var(--text); vertical-align: middle; }
+
+  .stage-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Update bar */
+  .update-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .update-info { font-size: 12px; color: var(--muted); }
+  .update-info strong { color: var(--text); }
+
+  .update-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .update-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* Funnel */
+  .funnel-wrap { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
+  .funnel-row { display: flex; align-items: center; gap: 10px; }
+  .funnel-label { font-size: 12px; color: var(--muted); width: 90px; flex-shrink: 0; text-align: right; }
+  .funnel-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 28px; overflow: hidden; position: relative; }
+  
+  .funnel-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    min-width: 32px;
+  }
+
+  .funnel-count { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; width: 30px; text-align: right; flex-shrink: 0; }
+
+  /* Scrollable table */
+  .table-scroll { overflow-x: auto; max-height: 320px; overflow-y: auto; }
+  .table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+  .table-scroll::-webkit-scrollbar-track { background: var(--surface2); }
+  .table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Error toast */
+  #error-toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: #7f1d1d;
+    border: 1px solid #ef4444;
+    color: #fca5a5;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    max-width: 380px;
+    display: none;
+    z-index: 999;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kpi, .chart-card, .table-card, .update-bar { animation: fadeIn 0.4s ease backwards; }
+  .kpi:nth-child(1) { animation-delay: 0.05s; }
+  .kpi:nth-child(2) { animation-delay: 0.10s; }
+  .kpi:nth-child(3) { animation-delay: 0.15s; }
+  .kpi:nth-child(4) { animation-delay: 0.20s; }
+  .kpi:nth-child(5) { animation-delay: 0.25s; }
+
+  @media (max-width: 1100px) {
+    .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+    .charts-grid { grid-template-columns: 1fr 1fr; }
+    .chart-card.wide { grid-column: span 2; }
+    .chart-card.full { grid-column: span 2; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-badge">TST</span>
+    <div>
+      <div class="logo-title">CRM Dashboard <span style="color:var(--muted);font-weight:400">· Doosan Bobcat</span></div>
+    </div>
+  </div>
+  <span id="week-label">?ang t?i d? li?u...</span>
+</header>
+
+<!-- LOADING SCREEN -->
+<div id="loading-section">
+  <div class="loader"></div>
+  <p style="color: var(--muted); font-size: 14px;">?ang ??ng b? d? li?u CRM t? Google Sheets...</p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="update-bar">
+    <div class="update-info">
+      ?? Ngu?n: <strong id="file-name-display">Google Sheets Live</strong>
+      &nbsp;·&nbsp; C?p nh?t lúc: <strong id="last-updated">—</strong>
+      &nbsp;·&nbsp; <span id="data-period">—</span>
+    </div>
+    <button class="update-btn" onclick="fetchAllSheetsData()">
+      ? &nbsp;Làm m?i d? li?u
+    </button>
+  </div>
+
+  <div class="kpi-strip">
+    <div class="kpi blue">
+      <div class="kpi-label">Khách hàng m?i</div>
+      <div class="kpi-value" id="k-new">—</div>
+      <div class="kpi-sub">tu?n này</div>
+    </div>
+    <div class="kpi cyan">
+      <div class="kpi-label">T?ng t??ng tác</div>
+      <div class="kpi-value" id="k-inter">—</div>
+      <div class="kpi-sub">l??t bình lu?n / liên h?</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">?ã ch?t ??n</div>
+      <div class="kpi-value" id="k-close">—</div>
+      <div class="kpi-sub">khách hàng</div>
+    </div>
+    <div class="kpi orange">
+      <div class="kpi-label">T? l? chuy?n ??i</div>
+      <div class="kpi-value" id="k-rate">—</div>
+      <div class="kpi-sub">Ch?t / T?ng KH</div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-label">Nhân viên sale</div>
+      <div class="kpi-value" id="k-staff">—</div>
+      <div class="kpi-sub">ng??i ho?t ??ng</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <!-- Pie: Source -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Ngu?n khách hàng m?i</div>
+          <div class="chart-sub">Phân b? theo kênh marketing</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="c-source"></canvas></div>
+    </div>
+
+    <!-- Funnel: Stages -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Ph?u chuy?n ??i</div>
+          <div class="chart-sub">M?i quan h? theo giai ?o?n</div>
+        </div>
+      </div>
+      <div id="funnel-wrap" class="funnel-wrap" style="margin-top:8px"></div>
+    </div>
+
+    <!-- Bar: Sales person -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Ho?t ??ng theo sale</div>
+          <div class="chart-sub">S? t??ng tác m?i nhân viên</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="c-staff"></canvas></div>
+    </div>
+
+    <!-- Doughnut: Stage breakdown -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Phân b? M?i quan h?</div>
+          <div class="chart-sub">T? l? % các giai ?o?n</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="c-stage"></canvas></div>
+    </div>
+
+    <!-- Bar: Revenue -->
+    <div class="chart-card wide">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Doanh thu / ??n hàng</div>
+          <div class="chart-sub" id="rev-sub">Giá tr? ??n hàng theo nhân viên (n?u có d? li?u)</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap tall"><canvas id="c-revenue"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Interactions table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">?? Chi ti?t t??ng tác</div>
+      <span class="badge" id="inter-count-badge" style="background:rgba(37,99,235,0.15);color:var(--accent2)">0 b?n ghi</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nhân viên</th>
+            <th>Khách hàng</th>
+            <th>Giai ?o?n</th>
+            <th>Th?i gian</th>
+            <th>N?i dung tóm t?t</th>
+          </tr>
+        </thead>
+        <tbody id="inter-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- New customers table -->
+  <div class="table-card" style="margin-top:16px">
+    <div class="table-header">
+      <div class="table-title">?? Khách hàng m?i</div>
+      <span class="badge" id="new-count-badge" style="background:rgba(16,185,129,0.15);color:var(--green)">0 khách</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên khách hàng</th>
+            <th>Ngu?n</th>
+          </tr>
+        </thead>
+        <tbody id="new-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="error-toast"></div>
+
+<script>
+// ==========================================
+// THAY LINK THÀNH CÁC LINK CSV T? GOOGLE SHEETS C?A B?N
+// ==========================================
+const SHEET_URLS = {
+  newCust: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQj1Wxc9DzdC__9ffuMS9Uhi_vCU9U2aSQvrh9ii9ffG9rTBX0LBGgeVh_afMhM7w/pub?gid=1039389119&single=true&output=csv',
+  inter:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQj1Wxc9DzdC__9ffuMS9Uhi_vCU9U2aSQvrh9ii9ffG9rTBX0LBGgeVh_afMhM7w/pub?gid=1021782305&single=true&output=csv',
+  orders:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQj1Wxc9DzdC__9ffuMS9Uhi_vCU9U2aSQvrh9ii9ffG9rTBX0LBGgeVh_afMhM7w/pub?gid=1477090896&single=true&output=csv',
+  revenue: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQj1Wxc9DzdC__9ffuMS9Uhi_vCU9U2aSQvrh9ii9ffG9rTBX0LBGgeVh_afMhM7w/pub?gid=717963464&single=true&output=csv'
+};
+
+let charts = {};
+const STAGE_ORDER  = ['M?i','Ti?p c?n','Có Nhu C?u','Ti?m n?ng','Ch?t'];
+const STAGE_COLORS = { 'M?i': '#60a5fa', 'Ti?p c?n': '#facc15', 'Có Nhu C?u': '#34d399', 'Ti?m n?ng': '#fb923c', 'Ch?t': '#a78bfa' };
+const SRC_COLORS = ['#3b82f6','#06b6d4','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899'];
+const STAFF_COLORS = ['#3b82f6','#06b6d4','#8b5cf6','#10b981','#f59e0b'];
+
+// Hàm t? ??ng load khi m? trang web
+window.onload = function() {
+  fetchAllSheetsData();
+};
+
+// Hàm fetch ??ng th?i c? 4 ngu?n d? li?u t? Google Sheets
+function fetchAllSheetsData() {
+  document.getElementById('loading-section').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('week-label').textContent = '?ang t?i d? li?u...';
+
+  const promises = Object.keys(SHEET_URLS).map(key => {
+    return new Promise((resolve, reject) => {
+      Papa.parse(SHEET_URLS[key], {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: results => resolve({ key, data: results.data }),
+        error: err => reject(`L?i t?i tab ${key}: ${err.message}`)
+      });
+    });
+  });
+
+  Promise.all(promises)
+    .then(results => {
+      const formattedData = {};
+      results.forEach(res => { formattedData[res.key] = res.data; });
+      renderDashboard(formattedData, "Google Sheets Cloud");
+    })
+    .catch(err => {
+      document.getElementById('loading-section').style.display = 'none';
+      showError(err);
+    });
+}
+
+function col(row, candidates) {
+  for (const k of Object.keys(row)) {
+    const kl = k.toLowerCase().trim();
+    if (candidates.some(c => kl.includes(c))) return row[k];
+  }
+  return '';
+}
+
+function renderDashboard(data, fileName) {
+  const { newCust, inter, orders, revenue } = data;
+
+  // KPI logic
+  const stages = inter.map(r => (col(r,['m?i quan h?','quan he','stage','relationship']) || '').toString().trim());
+  const closedCount = stages.filter(s => s === 'Ch?t').length;
+  const uniqueKH    = new Set(inter.map(r => col(r,['mã khách','khách hàng','customer','kh']) )).size;
+  const staff       = inter.map(r => (col(r,['ng??i th?c hi?n','nhan vien','staff','ng??i']) || '').toString().trim());
+  const uniqueStaff = new Set(staff.filter(Boolean)).size;
+
+  document.getElementById('k-new').textContent   = newCust.length;
+  document.getElementById('k-inter').textContent = inter.length;
+  document.getElementById('k-close').textContent = closedCount;
+  document.getElementById('k-rate').textContent  = newCust.length ? Math.round(closedCount / newCust.length * 100) + '%' : '—';
+  document.getElementById('k-staff').textContent = uniqueStaff;
+
+  const times = inter
+    .map(r => col(r,['th?i gian','time','ngày','date']))
+    .map(v => parseDate(v))
+    .filter(Boolean)
+    .sort((a,b) => a-b);
+
+  if (times.length) {
+    const fmt = d => d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'});
+    document.getElementById('week-label').textContent = `D? li?u: ${fmt(times[0])} – ${fmt(times[times.length-1])}`;
+    document.getElementById('data-period').innerHTML = `Kho?ng th?i gian: <strong>${fmt(times[0])} – ${fmt(times[times.length-1])}</strong>`;
+  }
+
+  document.getElementById('file-name-display').textContent = fileName;
+  document.getElementById('last-updated').textContent = new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // ?? Source chart ??
+  const srcMap = {};
+  newCust.forEach(r => {
+    let s = (col(r,['ngu?n','source','kenh']) || 'Khác').toString().trim();
+    s = s.replace(/^S\d+_\s*/,'');
+    if(s) srcMap[s] = (srcMap[s]||0)+1;
+  });
+  const srcLabels = Object.keys(srcMap);
+  const srcVals   = srcLabels.map(k => srcMap[k]);
+
+  destroyChart('c-source');
+  charts['c-source'] = new Chart(document.getElementById('c-source'), {
+    type: 'doughnut',
+    data: {
+      labels: srcLabels,
+      datasets: [{ data: srcVals, backgroundColor: SRC_COLORS.slice(0, srcLabels.length), borderColor: '#161b22', borderWidth: 3, hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position:'right', labels:{ color:'#8b949e', font:{ family:'Be Vietnam Pro', size:11 }, padding:14, boxWidth:12 }},
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} KH` }}
+      },
+      cutout: '60%'
+    }
+  });
+
+  // ?? Funnel ??
+  const stageMap = {};
+  stages.forEach(s => { if(s) stageMap[s] = (stageMap[s]||0)+1; });
+  const maxStage = Math.max(...Object.values(stageMap), 1);
+  const funnelWrap = document.getElementById('funnel-wrap');
+  funnelWrap.innerHTML = '';
+  STAGE_ORDER.forEach(stg => {
+    const cnt = stageMap[stg] || 0;
+    const pct = Math.round(cnt / maxStage * 100);
+    const color = STAGE_COLORS[stg] || '#60a5fa';
+    funnelWrap.innerHTML += `
+      <div class="funnel-row">
+        <div class="funnel-label">${stg}</div>
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width:${pct||0}%;background:${color}">${cnt > 0 ? cnt : ''}</div>
+        </div>
+        <div class="funnel-count" style="color:${color}">${cnt}</div>
+      </div>`;
+  });
+
+  // ?? Staff bar ??
+  const staffMap = {};
+  staff.forEach(s => { if(s) staffMap[s] = (staffMap[s]||0)+1; });
+  const staffLabels = Object.keys(staffMap).sort((a,b) => staffMap[b]-staffMap[a]);
+  const staffVals   = staffLabels.map(k => staffMap[k]);
+  const shortName = n => n ? n.split(' ').slice(-2).join(' ') : '?n danh';
+
+  destroyChart('c-staff');
+  charts['c-staff'] = new Chart(document.getElementById('c-staff'), {
+    type: 'bar',
+    data: {
+      labels: staffLabels.map(shortName),
+      datasets: [{ label: 'T??ng tác', data: staffVals, backgroundColor: STAFF_COLORS.slice(0, staffLabels.length), borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ` ${ctx.raw} t??ng tác` }}},
+      scales: {
+        x: { ticks:{ color:'#8b949e', font:{size:11} }, grid:{ display:false } },
+        y: { ticks:{ color:'#8b949e', font:{size:11} }, grid:{ color:'rgba(255,255,255,0.04)' }, beginAtZero:true }
+      }
+    }
+  });
+
+  // ?? Stage doughnut ??
+  const stageLabels = STAGE_ORDER.filter(s => stageMap[s]);
+  const stageVals   = stageLabels.map(s => stageMap[s]);
+  const stageColors = stageLabels.map(s => STAGE_COLORS[s] || '#60a5fa');
+
+  destroyChart('c-stage');
+  charts['c-stage'] = new Chart(document.getElementById('c-stage'), {
+    type: 'doughnut',
+    data: {
+      labels: stageLabels,
+      datasets: [{ data: stageVals, backgroundColor: stageColors, borderColor: '#161b22', borderWidth: 3, hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position:'right', labels:{ color:'#8b949e', font:{ family:'Be Vietnam Pro', size:11 }, padding:14, boxWidth:12 }},
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/inter.length*100)}%)` }}
+      },
+      cutout: '55%'
+    }
+  });
+
+  // ?? Revenue chart ??
+  const allOrders = [...orders, ...revenue];
+  const revMap = {};
+  allOrders.forEach(r => {
+    const person = (col(r,['ng??i th?c hi?n','nhan vien','staff']) || '').toString().trim();
+    const val    = parseFloat((col(r,['giá tr?','gia tri','value','revenue','amount']) || '0').toString().replace(/[^0-9.]/g,'')) || 0;
+    if (person && val > 0) revMap[person] = (revMap[person]||0) + val;
+  });
+
+  destroyChart('c-revenue');
+  const revLabels = Object.keys(revMap).sort((a,b) => revMap[b]-revMap[a]);
+  if (revLabels.length) {
+    document.getElementById('rev-sub').textContent = 'T?ng giá tr? ??n hàng theo nhân viên (VN?)';
+    charts['c-revenue'] = new Chart(document.getElementById('c-revenue'), {
+      type: 'bar',
+      data: {
+        labels: revLabels.map(shortName),
+        datasets: [{ label: 'Doanh thu (VN?)', data: revLabels.map(k => revMap[k]), backgroundColor: 'rgba(37,99,235,0.7)', borderColor: '#2563eb', borderWidth: 1, borderRadius: 6 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + ' ?' }}},
+        scales: {
+          x:{ ticks:{ color:'#8b949e', font:{size:11} }, grid:{ display:false } },
+          y:{ ticks:{ color:'#8b949e', font:{size:11}, callback: v => (v/1e6).toFixed(0)+'M' }, grid:{ color:'rgba(255,255,255,0.04)' }, beginAtZero:true }
+        }
+      }
+    });
+  } else {
+    document.getElementById('rev-sub').textContent = 'Ch?a có d? li?u ??n hàng trong file này';
+    const ctx = document.getElementById('c-revenue').getContext('2d');
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.font = '13px Be Vietnam Pro';
+    ctx.fillStyle = '#4b5563';
+    ctx.textAlign = 'center';
+    ctx.fillText('Không có d? li?u doanh thu', ctx.canvas.width/2, 100);
+  }
+
+  // ?? Interaction table ??
+  const tbody = document.getElementById('inter-tbody');
+  tbody.innerHTML = '';
+  inter.slice().reverse().forEach((r, i) => {
+    const person  = (col(r,['ng??i th?c hi?n','nhan vien']) || '').toString().trim();
+    const kh      = (col(r,['khách hàng','customer','ten kh']) || '').toString().trim();
+    const stage   = (col(r,['m?i quan h?','quan he','stage']) || '').toString().trim();
+    const time    = (col(r,['th?i gian','time','ngay']) || '').toString().trim();
+    const content = (col(r,['n?i dung','content','ghi chu']) || '').toString().trim();
+    const color = STAGE_COLORS[stage] || '#60a5fa';
+    const shortContent = content.length > 80 ? content.slice(0,80) + '…' : content;
+
+    tbody.innerHTML += `
+      <tr>
+        <td style="color:var(--muted);font-size:11px">${inter.length - i}</td>
+        <td><span style="font-weight:600">${shortName(person)}</span></td>
+        <td style="max-width:220px;font-size:12px">${kh}</td>
+        <td><span class="stage-pill" style="background:${color}22;color:${color};border:1px solid ${color}44">${stage||'—'}</span></td>
+        <td style="color:var(--muted);font-size:11px;white-space:nowrap">${time.split(' ')[0] || '—'}</td>
+        <td style="color:var(--muted);font-size:12px;max-width:260px">${shortContent}</td>
+      </tr>`;
+  });
+  document.getElementById('inter-count-badge').textContent = inter.length + ' b?n ghi';
+
+  // ?? New customers table ??
+  const newTbody = document.getElementById('new-tbody');
+  newTbody.innerHTML = '';
+  newCust.forEach((r, i) => {
+    const kh  = (col(r,['khách hàng','customer','ten']) || '').toString().trim();
+    let src   = (col(r,['ngu?n','source','kenh']) || 'Khác').toString().trim();
+    src = src.replace(/^S\d+_\s*/,'');
+    if(kh) {
+      newTbody.innerHTML += `
+        <tr>
+          <td style="color:var(--muted);font-size:11px">${i+1}</td>
+          <td style="font-weight:500">${kh}</td>
+          <td><span class="stage-pill" style="background:rgba(37,99,235,0.15);color:var(--accent2)">${src}</span></td>
+        </tr>`;
+    }
+  });
+  document.getElementById('new-count-badge').textContent = newCust.length + ' khách';
+
+  // Chuy?n màn hình ?n Loading, hi?n Dashboard
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+function parseDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  const s = v.toString().trim();
+  const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function showError(msg) {
+  const t = document.getElementById('error-toast');
+  t.textContent = '?? ' + msg; t.style.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 5000);
+}
+</script>
+</body>
+</html>
