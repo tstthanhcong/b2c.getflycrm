@@ -529,16 +529,19 @@ function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[i
 // ═══════════════════════════════════════════
 //  UTILS
 // ═══════════════════════════════════════════
-// Lấy giá trị cột — tìm theo tên chính xác trước, fallback tìm partial
+// Lấy giá trị cột — normalize Unicode NFC/NFD trước khi so sánh
+function norm(s){ return s ? s.normalize('NFC').toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/\s+/g,' ').trim() : ''; }
 function g(row, key){
   if(!row || !key) return '';
-  // Tìm chính xác
-  if(row.hasOwnProperty(key)) return (row[key]||'').toString().trim();
-  // Fallback: tìm partial (loại bỏ ký tự ẩn, so sánh lowercase)
-  const kl = key.toLowerCase().replace(/\s+/g,' ').trim();
+  // Tìm chính xác (sau normalize)
+  const kn = norm(key);
   for(const k of Object.keys(row)){
-    const rl = k.toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/\s+/g,' ').trim();
-    if(rl === kl || rl.includes(kl) || kl.includes(rl)){
+    if(norm(k) === kn) return (row[k]||'').toString().trim();
+  }
+  // Fallback: partial match
+  for(const k of Object.keys(row)){
+    const rn = norm(k);
+    if(rn.includes(kn) || kn.includes(rn)){
       return (row[k]||'').toString().trim();
     }
   }
