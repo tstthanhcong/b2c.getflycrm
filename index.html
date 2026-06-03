@@ -230,15 +230,13 @@ footer a{color:var(--blue);text-decoration:none}
     <div class="twrap">
       <table class="dtbl" style="table-layout:fixed">
         <colgroup>
-          <col style="width:42px"><col style="width:260px"><col style="width:140px">
-          <col style="width:130px"><col style="width:130px"><col>
+          <col style="width:42px"><col><col style="width:150px"><col style="width:160px">
         </colgroup>
-        <thead><tr><th>#</th><th>Tên khách hàng</th><th>Nguồn</th><th>Tỉnh / Thành phố</th><th>Ngành nghề</th><th>Ghi chú</th></tr></thead>
+        <thead><tr><th>#</th><th>Tên khách hàng</th><th>Nguồn</th><th>Tỉnh / Thành phố</th></tr></thead>
       </table>
       <div class="sb"><table class="dtbl" style="table-layout:fixed">
         <colgroup>
-          <col style="width:42px"><col style="width:260px"><col style="width:140px">
-          <col style="width:130px"><col style="width:130px"><col>
+          <col style="width:42px"><col><col style="width:150px"><col style="width:160px">
         </colgroup>
         <tbody id="ntbody"></tbody>
       </table></div>
@@ -355,15 +353,16 @@ async function fetchSheet(name){
 //  RENDER
 // ═══════════════════════════════════════════
 function render(nR, iR, rvR, qR, kR){
+  if(kR.length) console.log('[Thông tin KH] cols:', Object.keys(kR[0]));
+  if(qR.length) console.log('[Báo giá] cols:', Object.keys(qR[0]));
+  if(iR.length) console.log('[Tương tác] cols:', Object.keys(iR[0]));
 
   // Build lookup: tên KH → {city, industry, note} từ sheet Thông tin KH
   const khInfo = {};
   kR.forEach(r => {
     const name = g(r, C.K_NAME);
     if(name) khInfo[name.toLowerCase()] = {
-      city : g(r, C.K_CITY),
-      ind  : g(r, C.K_IND),
-      note : g(r, C.K_NOTE),
+      city : g(r, 'Tỉnh thành') || g(r, C.K_CITY) || g(r, 'Tỉnh/Thành phố') || g(r, 'Thành phố') || g(r, 'Tỉnh'),
     };
   });
   const getKH = name => khInfo[(name||'').toLowerCase()] || {};
@@ -482,18 +481,22 @@ function render(nR, iR, rvR, qR, kR){
     qb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">Chưa có dữ liệu — thêm sheet "Báo giá" vào Google Sheets</td></tr>';
   } else {
     [...qR].reverse().forEach((r, i) => {
-      const who  = shortName(g(r, C.Q_WHO) || g(r, C.I_WHO) || g(r, 'Người thực hiện'));
-      const name = g(r, C.Q_NAME) || g(r, C.I_NAME);
-      const val  = parseNum(g(r, C.Q_VAL) || g(r, C.O_VAL));
-      const time = (g(r, C.Q_TIME) || g(r, C.I_TIME) || g(r, C.O_TIME)).split(' ')[0];
-      const note = g(r, C.Q_NOTE) || g(r, 'Ghi chú') || g(r, 'Nội dung');
+      const who  = shortName(g(r, 'Người báo giá') || g(r, 'Người thực hiện'));
+      const name = g(r, 'Khách hàng');
+      const val  = parseNum(g(r, 'Giá trị báo giá'));
+      const time = (g(r, 'Thời gian') || g(r, 'Thời gian thực hiện')).split(' ')[0];
+      const note = g(r, 'Sản phẩm') || g(r, 'Ghi chú');
+      const stat = g(r, 'Trạng thái');
       qb.innerHTML += `<tr>
         <td style="color:var(--muted);font-size:11px">${qR.length-i}</td>
         <td style="font-weight:600">${esc(who)||'—'}</td>
         <td style="font-size:12px;white-space:normal;word-break:break-word">${esc(name)||'—'}</td>
         <td style="color:var(--amber);font-weight:700;font-size:12px">${val > 0 ? val.toLocaleString('vi-VN')+' đ' : '—'}</td>
         <td style="color:var(--muted);font-size:11px;white-space:nowrap">${esc(time)||'—'}</td>
-        <td class="td-content" style="color:var(--m2);font-size:12px">${esc(note)||'—'}</td>
+        <td class="td-content" style="font-size:12px">
+          ${stat ? '<span class="pill" style="background:'+(stat==='Đã duyệt'?'rgba(0,229,160,.15)':'rgba(255,176,32,.15)')+';color:'+(stat==='Đã duyệt'?'var(--green)':'var(--amber)')+';border:1px solid '+(stat==='Đã duyệt'?'rgba(0,229,160,.3)':'rgba(255,176,32,.3)')+'">'+esc(stat)+'</span>&nbsp;' : ''}
+          <span style="color:var(--m2)">${esc(note)||'—'}</span>
+        </td>
       </tr>`;
     });
   }
@@ -509,9 +512,7 @@ function render(nR, iR, rvR, qR, kR){
       <td style="color:var(--muted);font-size:11px">${i+1}</td>
       <td style="font-weight:600;white-space:normal;word-break:break-word;font-size:12.5px">${esc(name)}</td>
       <td><span class="pill" style="background:rgba(59,126,255,.12);color:#7eadff;font-size:10.5px">${esc(src)}</span></td>
-      <td style="font-size:12px;color:var(--m2)">${info.city ? `<span class="tag" style="background:rgba(0,212,255,.08);color:var(--cyan)">${esc(info.city)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
-      <td style="font-size:12px;color:var(--m2)">${info.ind  ? `<span class="tag" style="background:rgba(0,229,160,.08);color:var(--green)">${esc(info.ind)}</span>`  : '<span style="color:var(--muted)">—</span>'}</td>
-      <td class="td-content" style="color:var(--m2);font-size:12px">${esc(info.note)||'—'}</td>
+      <td style="font-size:12px">${info.city ? `<span class="tag" style="background:rgba(0,212,255,.1);color:var(--cyan);padding:3px 10px;border-radius:6px;font-weight:500">${esc(info.city)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
     </tr>`;
   });
   set('nbadge', nR.length + ' khách');
@@ -529,21 +530,17 @@ function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[i
 // ═══════════════════════════════════════════
 //  UTILS
 // ═══════════════════════════════════════════
-// Lấy giá trị cột — normalize Unicode NFC/NFD trước khi so sánh
+// Lấy giá trị cột — normalize NFC/NFD, loại ký tự ẩn
 function norm(s){ return s ? s.normalize('NFC').toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/\s+/g,' ').trim() : ''; }
 function g(row, key){
   if(!row || !key) return '';
-  // Tìm chính xác (sau normalize)
   const kn = norm(key);
   for(const k of Object.keys(row)){
     if(norm(k) === kn) return (row[k]||'').toString().trim();
   }
-  // Fallback: partial match
   for(const k of Object.keys(row)){
     const rn = norm(k);
-    if(rn.includes(kn) || kn.includes(rn)){
-      return (row[k]||'').toString().trim();
-    }
+    if(rn.includes(kn) || kn.includes(rn)) return (row[k]||'').toString().trim();
   }
   return '';
 }
