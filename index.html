@@ -267,34 +267,27 @@ const PAL = ['#3b7eff','#00d4ff','#00e5a0','#ffb020','#a259ff','#ff5c7c','#06b6d
 
 // Tên cột chính xác từ Getfly export
 const C = {
-  // Khách hàng mới
+  // Sheet: Khách hàng mới
   N_NAME : 'Khách hàng',
   N_SRC  : 'Nguồn khách hàng',
-  // Tương tác
-  I_TYPE : 'Kiểu tương tác',
+  // Sheet: Tương tác
   I_WHO  : 'Người thực hiện',
-  I_CODE : 'Mã khách hàng',
-  I_NAME : 'Khách hàng',       // ← tên đầy đủ, không dùng mã
-  I_PHONE: 'Số điện thoại',
+  I_NAME : 'Khách hàng',
   I_TIME : 'Thời gian thực hiện',
   I_NOTE : 'Nội dung tương tác',
   I_STAGE: 'Mối quan hệ',
-  // Đơn hàng / Doanh thu
-  O_NAME : 'Khách hàng',
+  // Sheet: Đơn hàng / Doanh thu
   O_WHO  : 'Người thực hiện',
-  O_TIME : 'Thời gian thực hiện',
   O_VAL  : 'Giá trị',
-  // Báo giá (tên cột tự thêm vào sheet)
+  // Sheet: Báo giá — tên cột chính xác
   Q_WHO  : 'Người báo giá',
   Q_NAME : 'Khách hàng',
   Q_VAL  : 'Giá trị báo giá',
   Q_TIME : 'Thời gian',
   Q_NOTE : 'Sản phẩm',
-  // Thông tin KH (sheet mới)
+  // Sheet: Thông tin KH — tên cột chính xác
   K_NAME : 'Khách hàng',
   K_CITY : 'Tỉnh thành',
-  K_IND  : 'Ngành nghề',
-  K_NOTE : 'Ghi chú',
 };
 
 let charts={}, cdsec=300, cdT, rfT;
@@ -362,7 +355,7 @@ function render(nR, iR, rvR, qR, kR){
   kR.forEach(r => {
     const name = g(r, C.K_NAME);
     if(name) khInfo[name.toLowerCase()] = {
-      city : g(r, 'Tỉnh thành') || g(r, C.K_CITY) || g(r, 'Tỉnh/Thành phố') || g(r, 'Thành phố') || g(r, 'Tỉnh'),
+      city : g(r, C.K_CITY),
     };
   });
   const getKH = name => khInfo[(name||'').toLowerCase()] || {};
@@ -481,10 +474,10 @@ function render(nR, iR, rvR, qR, kR){
     qb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">Chưa có dữ liệu — thêm sheet "Báo giá" vào Google Sheets</td></tr>';
   } else {
     [...qR].reverse().forEach((r, i) => {
-      const who  = shortName(g(r, 'Người báo giá') || g(r, 'Người thực hiện'));
-      const name = g(r, 'Khách hàng');
-      const val  = parseNum(g(r, 'Giá trị báo giá'));
-      const time = (g(r, 'Thời gian') || g(r, 'Thời gian thực hiện')).split(' ')[0];
+      const who  = shortName(g(r, C.Q_WHO));
+      const name = g(r, C.Q_NAME);
+      const val  = parseNum(g(r, C.Q_VAL));
+      const time = g(r, C.Q_TIME).split(' ')[0];
       const note = g(r, 'Sản phẩm') || g(r, 'Ghi chú');
       const stat = g(r, 'Trạng thái');
       qb.innerHTML += `<tr>
